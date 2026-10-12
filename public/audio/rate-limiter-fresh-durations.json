@@ -1,0 +1,7 @@
+{
+  "rate-limiter-fresh-hook": 5.4,
+  "rate-limiter-fresh-problem": 9.72,
+  "rate-limiter-fresh-solution": 9.34,
+  "rate-limiter-fresh-burst": 12.79,
+  "rate-limiter-fresh-takeaway": 10.85
+}

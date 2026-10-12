@@ -1,0 +1,21 @@
+[
+  {
+    "id": "part-2",
+    "video": "out/lb-algorithms.mp4",
+    "title": "Part 2: Which Load Balancing Algorithm to Pick?",
+    "scheduled_time": "2026-10-04 11:00:00",
+    "caption": "Which Load Balancing algorithm should you actually pick in a System Design interview? \ud83e\udd14 Part 2: Load Balancers.\n\nRound Robin is blind to workload \u2014 a 2KB ping gets the same server as a 4K video encode! \n\nHere is how Least Connections, IP Hashing, and Weighted Round Robin solve it.\n\nFollow @beyond.localhost for senior backend & system design breakdowns! \ud83d\ude80\n\n#systemdesign #softwareengineering #loadbalancer #coding #techinterview #backend #beyondlocalhost",
+    "status": "PUBLISHED",
+    "post_id": "18101131655566040",
+    "published_at": "2026-10-04 20:09:53"
+  },
+  {
+    "id": "part-3",
+    "video": "out/lb-layers-ha.mp4",
+    "title": "Part 3: L4 vs L7 & Who Balances the Balancer?",
+    "scheduled_time": "2026-10-05 11:00:00",
+    "caption": "What happens if your load balancer dies? \ud83d\udc80 Part 3: Layer 4 vs Layer 7 & High Availability.\n\nMoving the bottleneck one tier up doesn't solve single points of failure! Here is how Active-Passive pairs, VRRP floating VIPs, and L4/L7 tiered architectures keep systems at 99.999% uptime.\n\nFollow @beyond.localhost for senior backend & system design breakdowns! \ud83d\ude80\n\n#systemdesign #highavailability #softwarearchitecture #sdeprep #cloudcomputing #backend #beyondlocalhost",
+    "status": "PENDING",
+    "post_id": null
+  }
+]

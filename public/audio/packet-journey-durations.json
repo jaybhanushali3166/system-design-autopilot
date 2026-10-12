@@ -1,0 +1,8 @@
+{
+  "packet-journey-act1-question": 16.2,
+  "packet-journey-act2-dns": 15.14,
+  "packet-journey-act3-tcp": 21.46,
+  "packet-journey-act4-tls": 18.46,
+  "packet-journey-act5-http": 21.55,
+  "packet-journey-act6-takeaway": 13.73
+}

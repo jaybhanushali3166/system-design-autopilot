@@ -1,0 +1,30 @@
+{
+  "name": "system-design-autopilot",
+  "version": "1.0.0",
+  "description": "Automated system design short reels using Remotion",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render",
+    "render": "remotion render src/index.ts load-balancer out/load-balancer.mp4",
+    "render:all": "node scripts/render-all.js"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "@remotion/cli": "4.0.291",
+    "@types/three": "^0.186.0",
+    "gsap": "^3.15.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.291",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.0": true
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "realtime-protocols-act1-hook": 11.88,
+  "realtime-protocols-act2-polling": 16.58,
+  "realtime-protocols-act3-sse": 18.65,
+  "realtime-protocols-act4-websockets": 20.21,
+  "realtime-protocols-act5-takeaway": 16.54
+}

@@ -1,0 +1,8 @@
+{
+  "http-versions-act1-hook": 13.66,
+  "http-versions-act2-http1": 18.5,
+  "http-versions-act3-http2": 18.43,
+  "http-versions-act4-http3": 16.22,
+  "http-versions-act5-quic": 22.8,
+  "http-versions-act6-takeaway": 19.1
+}
