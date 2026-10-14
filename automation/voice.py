@@ -31,7 +31,11 @@ def utterances(text):
    if buf:result.append(' '.join(buf))
  return [s for s in result if s]
 
-def synthesize(content,project,voice='am_michael'):
+def synthesize(content,project,voice='am_michael',provider='kokoro'):
+ if provider=='gemini':
+  from .gemini_voice import synthesize as gemini_synthesize
+  return gemini_synthesize(content,project,voice)
+ if provider!='kokoro':raise ValueError('Unsupported voice provider')
  from kokoro_onnx import Kokoro
  import soundfile as sf
  model_dir=Path(os.environ.get('AUTOPILOT_MODEL_DIR',str(WORK/'models')))

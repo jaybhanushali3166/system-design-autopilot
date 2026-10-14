@@ -7,6 +7,7 @@ from .common import ROOT,WORK,config,load_env,write_json
 from .catalog import build_catalog
 from .content import generate,digest
 from .voice import synthesize
+from .gemini_voice import identity as voice_identity
 from .render import build
 from .validate import validate_video
 
@@ -53,13 +54,14 @@ def run(args):
   content=generate(lesson,args.provider);write_json(project/'content.json',content)
  if args.prepare_only:
   print(f'Content prepared for {lesson["id"]}; no voice, upload or publication');return
- narration_hash=digest([x['narration'] for x in content['scenes']])
+ voice_profile=voice_identity(config())
+ narration_hash=digest({'narration':[x['narration'] for x in content['scenes']],'voice_profile':voice_profile})
  old_audio=json.loads((project/'audio.json').read_text()) if (project/'audio.json').exists() else {}
  if args.resume and old_audio.get('narration_hash')==narration_hash:audio=old_audio
  else:
-  audio=synthesize(content,project,config()['voice']);audio['narration_hash']=narration_hash;write_json(project/'audio.json',audio)
+  audio=synthesize(content,project,config()['voice'],provider=voice_profile['provider']);audio['narration_hash']=narration_hash;write_json(project/'audio.json',audio)
  build(lesson,content,audio,project)
- hash_value=digest({'content':content,'voice':audio['voice'],'template':hashlib.sha256((ROOT/'automation/render.py').read_bytes()).hexdigest(),'renderer':config()['hyperframes_version']})
+ hash_value=digest({'content':content,'voice':audio['voice'],'voice_profile':voice_profile,'template':hashlib.sha256((ROOT/'automation/render.py').read_bytes()).hexdigest(),'renderer':config()['hyperframes_version']})
  hf(project,'check','--json',report=project/'check.json')
  check=json.loads((project/'check.json').read_text())
  if check.get('ok') is not True or check.get('browserSkipped'):raise ValueError('Browser validation failed or was skipped')
@@ -73,7 +75,7 @@ def run(args):
   midpoint=scene['start']+scene['duration']*.65
   subprocess.run(['ffmpeg','-y','-v','error','-ss',str(midpoint),'-i',str(project/'reel.mp4'),'-frames:v','1',str(project/f'review-{scene["index"]}.png')],check=True)
  result={'lesson_id':lesson['id'],'job_token':args.job_token,'content_hash':hash_value,
-         'validation':validate,'caption':content['caption'],'dry_run':args.dry_run,
+         'validation':validate,'voice_profile':voice_profile,'caption':content['caption'],'dry_run':args.dry_run,
          'run_id':os.environ.get('GITHUB_RUN_ID','local'),'video_url':None,'cover_url':None}
  write_json(project/'result.json',result)
  if args.upload:

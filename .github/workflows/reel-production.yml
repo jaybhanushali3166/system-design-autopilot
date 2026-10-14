@@ -101,7 +101,7 @@ jobs:
           path: |
             .autopilot/models
             ~/.cache/puppeteer
-          key: reel-models-linux-kokoro-v1-hf-0.8.156
+          key: reel-models-linux-varo-tiny-en-v1-hf-0.8.156
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
           args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER")
@@ -122,6 +122,7 @@ jobs:
             .autopilot/runs/**/result.json
             .autopilot/runs/**/check.json
             .autopilot/runs/**/content.json
+            .autopilot/runs/**/audio.json
             .autopilot/runs/**/captions.srt
           retention-days: 7
           if-no-files-found: ignore

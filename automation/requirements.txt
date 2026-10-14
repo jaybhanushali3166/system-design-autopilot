@@ -3,3 +3,5 @@ cloudinary==1.44.1
 kokoro-onnx==0.4.9
 soundfile==0.13.1
 PyNaCl==1.6.0
+faster-whisper==1.2.1
+av==16.1.0

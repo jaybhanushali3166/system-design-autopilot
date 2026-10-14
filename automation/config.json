@@ -15,11 +15,14 @@
   "late_window_minutes": 30,
   "publishing_enabled": false,
   "generation_provider": "gemini",
-  "voice": "am_michael",
+  "voice": "en-us-varo",
   "max_generation_attempts": 3,
   "max_duration_seconds": 105,
   "fps": 30,
   "width": 1080,
   "height": 1920,
-  "hyperframes_version": "0.8.156"
+  "hyperframes_version": "0.8.156",
+  "voice_provider": "gemini",
+  "voice_model": "gemini-3.8-flash-tts",
+  "alignment_model": "tiny.en"
 }
