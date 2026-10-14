@@ -6,7 +6,8 @@ An unattended production job and a paused-by-default Cloudflare scheduler for th
 
 - `catalog.py`: exports the approved curriculum and creates time-zone-aware release dates.
 - `content.py`: accepts bounded scene JSON from Gemini, or a reviewed pilot lesson. No generated code is executed.
-- `voice.py`: Kokoro ONNX voiceover, cached model, measured utterance-level captions.
+- `voice.py`: voice-provider dispatcher; Kokoro remains available for explicitly configured local use.
+- `gemini_voice.py`: Gemini Varo continuous scene narration and local Whisper alignment for verbatim captions.
 - `render.py`: trusted HTML/GSAP diagram families and local fonts.
 - `produce.py`: content → voice → composition → browser checks → MP4 → validation → optional upload/callback. It never publishes to Instagram.
 - `cloudflare/src/worker.mjs`: claims jobs, prepares Instagram media, publishes due releases and reconciles uncertain results.
@@ -38,6 +39,14 @@ npm ci
 Generated projects, reports, audio, model files and videos go into ignored `.autopilot/`. `--upload` is a separate explicit option. It uploads to the configured Cloudinary account; it still does not publish.
 
 Two hand-authored pilot lesson packets are included: requirements (`lesson-01`) and atomic inventory claims (`lesson-28`). Remaining lessons use Gemini content generation. Pilot availability does not mean all 60 finished scripts have been authored or fact checked. The catalog contains each lesson's scope, caveat and sources. AI-generated content requires the specified schema/technical gates; those are not proof of factual accuracy.
+
+## Course voice
+
+The production voice is Gemini **Varo** (`en-us-varo`) on `gemini-3.8-flash-tts`, using the existing billing-disabled Google project and GitHub secret. Each scene is synthesized as one continuous passage. Local `faster-whisper` aligns sentence captions to measured speech; segmentation preserves the continuous waveform. Poor script agreement, invalid caption timing, silent speech, or invalid video/audio fails the job.
+
+Voice/model/style identity participates in narration and media hashes, so a resumed Kokoro job cannot reuse its old voice audio as Varo. Gemini rate limits and temporary service errors receive bounded retries; permanent access errors stop. There is no automatic change of voice or paid provider. The scheduler's existing retry/hold policy applies if narration fails.
+
+Speech responses and alignment data are cached per script and voice profile inside a job. The small Whisper model is cached on the GitHub runner. Source deployment defaults remain paused; live dates and enabled state are held in Cloudflare D1 and are not changed by a voice update.
 
 ## Account setup
 
