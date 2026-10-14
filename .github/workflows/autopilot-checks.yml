@@ -1,0 +1,22 @@
+name: Autopilot checks
+on:
+  pull_request:
+    paths: ['automation/**', '.github/workflows/*reel*', '.github/workflows/autopilot-checks.yml']
+  push:
+    paths: ['automation/**', '.github/workflows/*reel*', '.github/workflows/autopilot-checks.yml']
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - run: python -m unittest discover -s automation/tests -v
+      - run: node --test automation/cloudflare/test/*.test.mjs

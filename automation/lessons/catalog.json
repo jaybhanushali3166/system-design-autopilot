@@ -1,0 +1,998 @@
+[
+  {
+    "id": "lesson-01",
+    "number": 1,
+    "series": 1,
+    "series_title": "Design thinking and sizing",
+    "title": "Start with requirements",
+    "hook": "What must this system actually guarantee?",
+    "target_seconds": 75,
+    "outcome": "Turn a vague prompt into user flows, constraints and one measurable success criterion.",
+    "boundary": "Separate functional requirements from latency, durability and availability targets.",
+    "interview_pattern": "Every design prompt",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-02",
+    "number": 2,
+    "series": 1,
+    "series_title": "Design thinking and sizing",
+    "title": "Estimate traffic",
+    "hook": "How many requests must this design handle?",
+    "target_seconds": 75,
+    "outcome": "Derive average and peak QPS from active users and operations per user.",
+    "boundary": "State peak-factor assumptions; DAU is not concurrent users.",
+    "interview_pattern": "Sizing any service",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-03",
+    "number": 3,
+    "series": 1,
+    "series_title": "Design thinking and sizing",
+    "title": "Estimate storage and bandwidth",
+    "hook": "Will storage or bandwidth become the bottleneck?",
+    "target_seconds": 75,
+    "outcome": "Calculate bytes per day, retention, replication overhead and transfer rate using one worked example.",
+    "boundary": "Label all quantities as assumptions; count indexes and replicas separately.",
+    "interview_pattern": "Media, logging, chat",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-04",
+    "number": 4,
+    "series": 1,
+    "series_title": "Design thinking and sizing",
+    "title": "Latency, throughput and tail latency",
+    "hook": "Why is the average fast while users still wait?",
+    "target_seconds": 90,
+    "outcome": "Separate response time from work completed per second; expose p99 and queueing as utilization rises.",
+    "boundary": "Little\u2019s Law uses steady-state average quantities; more concurrency can worsen overload.",
+    "interview_pattern": "Slow APIs, capacity planning",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-05",
+    "number": 5,
+    "series": 1,
+    "series_title": "Design thinking and sizing",
+    "title": "Grow a simple architecture",
+    "hook": "What breaks when one server becomes ten?",
+    "target_seconds": 90,
+    "outcome": "Evolve a client\u2013app\u2013database baseline with vertical scaling, horizontal scaling and externalized session state.",
+    "boundary": "Add a component only for a named bottleneck; stateless app servers still depend on stateful systems.",
+    "interview_pattern": "Architecture sketch for every prompt",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-06",
+    "number": 6,
+    "series": 2,
+    "series_title": "Request paths and traffic",
+    "title": "DNS, TCP, TLS and connection reuse",
+    "hook": "Why can the first request be slower?",
+    "target_seconds": 75,
+    "outcome": "Follow name lookup, connection setup and an HTTP exchange; show where reuse avoids work.",
+    "boundary": "Latencies are illustrative; keep-alive and TLS resumption address different setup costs.",
+    "interview_pattern": "API latency, global applications",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview",
+      "https://www.rfc-editor.org/rfc/rfc9110"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-07",
+    "number": 7,
+    "series": 2,
+    "series_title": "Request paths and traffic",
+    "title": "HTTP/1.1, HTTP/2 and HTTP/3",
+    "hook": "Can one lost packet stall several requests?",
+    "target_seconds": 75,
+    "outcome": "Show sequential responses, multiplexing and QUIC stream isolation with moving packets.",
+    "boundary": "HTTP/2 still inherits TCP head-of-line blocking; QUIC has shared congestion control.",
+    "interview_pattern": "Web performance, protocol choice",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview",
+      "https://www.rfc-editor.org/rfc/rfc9110"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-08",
+    "number": 8,
+    "series": 2,
+    "series_title": "Request paths and traffic",
+    "title": "Reverse proxy, API gateway and load balancer",
+    "hook": "Who handles this incoming request?",
+    "target_seconds": 75,
+    "outcome": "Map routing, TLS termination and application policies to the edge request path.",
+    "boundary": "Roles overlap in products; explain responsibility rather than treating names as disjoint boxes.",
+    "interview_pattern": "Public APIs, service boundaries",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview",
+      "https://www.rfc-editor.org/rfc/rfc9110"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-09",
+    "number": 9,
+    "series": 2,
+    "series_title": "Request paths and traffic",
+    "title": "Load balancing and health checks",
+    "hook": "How do requests avoid an unhealthy server?",
+    "target_seconds": 90,
+    "outcome": "Compare round robin and least connections; eject a failed backend and maintain redundant ingress.",
+    "boundary": "Health checks are imperfect; sticky sessions and unequal request costs change distribution.",
+    "interview_pattern": "Scale-out services, failover",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview",
+      "https://www.rfc-editor.org/rfc/rfc9110"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-10",
+    "number": 10,
+    "series": 2,
+    "series_title": "Request paths and traffic",
+    "title": "CDNs and edge caching",
+    "hook": "Why send every image across an ocean?",
+    "target_seconds": 75,
+    "outcome": "Trace edge hit versus origin miss and distinguish static, personalized and dynamic content.",
+    "boundary": "Cache keys and freshness control correctness; DNS resolution and anycast routing are distinct mechanisms.",
+    "interview_pattern": "Media, global reads",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview",
+      "https://www.rfc-editor.org/rfc/rfc9110"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-11",
+    "number": 11,
+    "series": 3,
+    "series_title": "Data and storage",
+    "title": "Choose storage from access patterns",
+    "hook": "Which database does this workload need?",
+    "target_seconds": 75,
+    "outcome": "Choose among relational, key-value, document and wide-column models from queries and guarantees.",
+    "boundary": "SQL/NoSQL labels do not determine consistency or transaction support.",
+    "interview_pattern": "Database choice in any prompt",
+    "sources": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://www.postgresql.org/docs/current/wal.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-12",
+    "number": 12,
+    "series": 3,
+    "series_title": "Data and storage",
+    "title": "Indexes and query access paths",
+    "hook": "Why does a lookup scan a million rows?",
+    "target_seconds": 90,
+    "outcome": "Animate table scan versus index lookup; teach composite index order and covering queries.",
+    "boundary": "Indexes add write and storage cost; column order must match predicates and sorting.",
+    "interview_pattern": "Searchable records, slow queries",
+    "sources": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://www.postgresql.org/docs/current/wal.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-13",
+    "number": 13,
+    "series": 3,
+    "series_title": "Data and storage",
+    "title": "B+ trees and LSM trees",
+    "hook": "Why can fast writes make later reads harder?",
+    "target_seconds": 90,
+    "outcome": "Follow page lookup versus buffered append, flush and compaction.",
+    "boundary": "Read, write and space amplification depend on workload and configuration; avoid universal winners.",
+    "interview_pattern": "Write-heavy ingestion, storage engines",
+    "sources": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://www.postgresql.org/docs/current/wal.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-14",
+    "number": 14,
+    "series": 3,
+    "series_title": "Data and storage",
+    "title": "Transactions and durable commits",
+    "hook": "What survives a crash halfway through a write?",
+    "target_seconds": 90,
+    "outcome": "Use a two-row money transfer to explain atomicity, commit and write-ahead logging.",
+    "boundary": "Local ACID does not atomically include an external payment provider or message broker.",
+    "interview_pattern": "Orders, balances, durable state",
+    "sources": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://www.postgresql.org/docs/current/wal.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-15",
+    "number": 15,
+    "series": 3,
+    "series_title": "Data and storage",
+    "title": "Normalization and denormalization",
+    "hook": "Why store the same fact twice?",
+    "target_seconds": 75,
+    "outcome": "Compare joined source data with a read-optimized materialized view.",
+    "boundary": "Denormalization creates an update and reconciliation obligation.",
+    "interview_pattern": "Profiles, catalog, feeds",
+    "sources": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://www.postgresql.org/docs/current/wal.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-16",
+    "number": 16,
+    "series": 3,
+    "series_title": "Data and storage",
+    "title": "Object storage and large files",
+    "hook": "Should the database store every video byte?",
+    "target_seconds": 75,
+    "outcome": "Separate metadata from blob bytes; trace a client upload using a scoped presigned URL.",
+    "boundary": "An uploaded blob can exist before its metadata is finalized; validate and reconcile incomplete uploads.",
+    "interview_pattern": "Drive, photos, videos",
+    "sources": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://www.postgresql.org/docs/current/wal.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-17",
+    "number": 17,
+    "series": 3,
+    "series_title": "Data and storage",
+    "title": "Distributed identifiers",
+    "hook": "How do servers create IDs without taking turns?",
+    "target_seconds": 75,
+    "outcome": "Compare random UUIDs, time-ordered UUIDs and Snowflake-style IDs against coordination and index locality.",
+    "boundary": "Time order is not causal order; clocks, worker identity, collision risk and guessability matter.",
+    "interview_pattern": "URL shortener, events, orders",
+    "sources": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://www.postgresql.org/docs/current/wal.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-18",
+    "number": 18,
+    "series": 4,
+    "series_title": "Caching and partitioning",
+    "title": "Cache-aside reads",
+    "hook": "Why ask the database for the same thing again?",
+    "target_seconds": 75,
+    "outcome": "Animate miss \u2192 database read \u2192 populate \u2192 hit; explain locality and bounded cache capacity.",
+    "boundary": "A cache is usually a copy; design the miss and cache-down paths.",
+    "interview_pattern": "Read-heavy systems",
+    "sources": [
+      "https://redis.io/docs/latest/develop/use/client-side-caching/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-19",
+    "number": 19,
+    "series": 4,
+    "series_title": "Caching and partitioning",
+    "title": "Cache writes and invalidation",
+    "hook": "Why does a successful update show old data?",
+    "target_seconds": 90,
+    "outcome": "Trace a stale-value race; compare invalidate-on-write, write-through and write-back guarantees.",
+    "boundary": "TTL bounds some staleness; it does not repair every race. Write-back needs explicit durability.",
+    "interview_pattern": "Profiles, product catalog",
+    "sources": [
+      "https://redis.io/docs/latest/develop/use/client-side-caching/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-20",
+    "number": 20,
+    "series": 4,
+    "series_title": "Caching and partitioning",
+    "title": "TTL and eviction",
+    "hook": "Which cached item should leave first?",
+    "target_seconds": 75,
+    "outcome": "Separate expiry from capacity eviction; compare LRU, LFU and FIFO on the same request sequence.",
+    "boundary": "Policy choice depends on access patterns; expiry and eviction are independent.",
+    "interview_pattern": "Memory-bounded caches",
+    "sources": [
+      "https://redis.io/docs/latest/develop/use/client-side-caching/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-21",
+    "number": 21,
+    "series": 4,
+    "series_title": "Caching and partitioning",
+    "title": "Sharding and shard keys",
+    "hook": "Why is one database hot while others are idle?",
+    "target_seconds": 90,
+    "outcome": "Compare range and hash placement; choose a key from the dominant query and demonstrate a hotspot.",
+    "boundary": "Cross-shard queries, secondary indexes and repartitioning have costs; table size alone is not a trigger.",
+    "interview_pattern": "Large user datasets, multi-tenancy",
+    "sources": [
+      "https://redis.io/docs/latest/develop/use/client-side-caching/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-22",
+    "number": 22,
+    "series": 4,
+    "series_title": "Caching and partitioning",
+    "title": "Consistent hashing",
+    "hook": "Why does adding one node move so much data?",
+    "target_seconds": 75,
+    "outcome": "Compare modulo remapping with a ring and virtual nodes.",
+    "boundary": "Minimal expected movement assumes suitable key distribution; a hot key stays hot.",
+    "interview_pattern": "Distributed caches, partition placement",
+    "sources": [
+      "https://redis.io/docs/latest/develop/use/client-side-caching/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-23",
+    "number": 23,
+    "series": 5,
+    "series_title": "Distributed correctness",
+    "title": "Replication, lag and failover",
+    "hook": "Why does refresh hide a change you just saved?",
+    "target_seconds": 75,
+    "outcome": "Follow primary commit and asynchronous replica catch-up; show read routing for read-your-writes.",
+    "boundary": "Replicas do not multiply write capacity or replace backups; failover can lose unreplicated writes.",
+    "interview_pattern": "Read-heavy apps, profiles",
+    "sources": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://raft.github.io/raft.pdf"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-24",
+    "number": 24,
+    "series": 5,
+    "series_title": "Distributed correctness",
+    "title": "Consistency models",
+    "hook": "Which version is this read allowed to return?",
+    "target_seconds": 90,
+    "outcome": "Compare linearizability, eventual convergence and session guarantees with one write/read timeline.",
+    "boundary": "Read-your-writes and monotonic reads are distinct; eventual consistency does not promise a fixed delay.",
+    "interview_pattern": "Chat, inventory, profiles",
+    "sources": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://raft.github.io/raft.pdf"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-25",
+    "number": 25,
+    "series": 5,
+    "series_title": "Distributed correctness",
+    "title": "CAP and the normal-path trade-off",
+    "hook": "What should a disconnected replica do?",
+    "target_seconds": 90,
+    "outcome": "Partition a replicated service; contrast refusal with potentially stale answers, then introduce PACELC.",
+    "boundary": "CAP consistency means linearizability; availability is a formal response guarantee, not a general uptime score.",
+    "interview_pattern": "Multi-region and replicated services",
+    "sources": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://raft.github.io/raft.pdf"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-26",
+    "number": 26,
+    "series": 5,
+    "series_title": "Distributed correctness",
+    "title": "Quorums and consensus",
+    "hook": "How can replicas agree on one decision?",
+    "target_seconds": 90,
+    "outcome": "Show majority log commitment and quorum intersection; distinguish voting from a consensus protocol.",
+    "boundary": "R + W > N alone does not establish linearizability; membership, versions and failure assumptions matter.",
+    "interview_pattern": "Replicated logs, durable writes",
+    "sources": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://raft.github.io/raft.pdf"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-27",
+    "number": 27,
+    "series": 5,
+    "series_title": "Distributed correctness",
+    "title": "Leases, distributed locks and fencing",
+    "hook": "What if an old leader wakes up late?",
+    "target_seconds": 90,
+    "outcome": "Expire one worker\u2019s lease and let a replacement take over; reject the stale worker with a fencing token.",
+    "boundary": "A lease or lock alone cannot stop a paused worker\u2019s later side effects.",
+    "interview_pattern": "Schedulers, exclusive resource access",
+    "sources": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://raft.github.io/raft.pdf"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-28",
+    "number": 28,
+    "series": 5,
+    "series_title": "Distributed correctness",
+    "title": "Concurrency and isolation",
+    "hook": "Can two customers buy the last seat?",
+    "target_seconds": 90,
+    "outcome": "Show lost update and check-then-write races; fix one invariant using conditional updates or locking.",
+    "boundary": "Isolation levels have different anomalies; serializable transactions can require retries.",
+    "interview_pattern": "Booking, stock, counters",
+    "sources": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://raft.github.io/raft.pdf"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-29",
+    "number": 29,
+    "series": 5,
+    "series_title": "Distributed correctness",
+    "title": "Distributed transactions and sagas",
+    "hook": "What if payment succeeds but the order fails?",
+    "target_seconds": 90,
+    "outcome": "Compare coordinated commit with local steps and compensating actions using an order workflow.",
+    "boundary": "Compensation is a business action and can fail; do not present a saga as an ACID rollback.",
+    "interview_pattern": "Checkout, multi-service workflows",
+    "sources": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://raft.github.io/raft.pdf"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-30",
+    "number": 30,
+    "series": 6,
+    "series_title": "Asynchronous work and events",
+    "title": "Work queues and retained event logs",
+    "hook": "Why can two consumers need the same event?",
+    "target_seconds": 75,
+    "outcome": "Compare work distribution with a retained log and independent consumer positions.",
+    "boundary": "Products can support several delivery modes; avoid equating a brand with one abstract model.",
+    "interview_pattern": "Background jobs, analytics",
+    "sources": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-31",
+    "number": 31,
+    "series": 6,
+    "series_title": "Asynchronous work and events",
+    "title": "Acknowledgements and delivery guarantees",
+    "hook": "Did the worker finish before it crashed?",
+    "target_seconds": 90,
+    "outcome": "Move a crash before and after the side effect and acknowledgement; expose loss versus duplicate execution.",
+    "boundary": "Exactly-once claims need a stated transaction boundary; external effects need their own protection.",
+    "interview_pattern": "Reliable workers, webhook consumers",
+    "sources": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-32",
+    "number": 32,
+    "series": 6,
+    "series_title": "Asynchronous work and events",
+    "title": "Partitions, ordering and consumer groups",
+    "hook": "Why did event two arrive before event one?",
+    "target_seconds": 90,
+    "outcome": "Route related events to a partition; scale consumers while showing per-partition ordering.",
+    "boundary": "Global ordering limits parallelism; ordering is not automatic across producers, partitions or retries.",
+    "interview_pattern": "Chat, order events, ingestion",
+    "sources": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-33",
+    "number": 33,
+    "series": 6,
+    "series_title": "Asynchronous work and events",
+    "title": "Idempotency and safe retries",
+    "hook": "Could one retry charge you twice?",
+    "target_seconds": 75,
+    "outcome": "Reuse one operation key; atomically claim, protect the effect and replay an appropriate result.",
+    "boundary": "Scope keys, match payloads, retain records and propagate protection across external boundaries.",
+    "interview_pattern": "Payments, create APIs, deduplication",
+    "sources": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-34",
+    "number": 34,
+    "series": 6,
+    "series_title": "Asynchronous work and events",
+    "title": "Transactional outbox and CDC",
+    "hook": "What if the database commits but the event disappears?",
+    "target_seconds": 90,
+    "outcome": "Commit business state and an outbox row together; let a relay or CDC publish later.",
+    "boundary": "Publishing can repeat; consumers still need deduplication and relevant ordering.",
+    "interview_pattern": "Order events, notifications",
+    "sources": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-35",
+    "number": 35,
+    "series": 6,
+    "series_title": "Asynchronous work and events",
+    "title": "Poison messages, DLQs and replay",
+    "hook": "Can one bad event stop the entire queue?",
+    "target_seconds": 75,
+    "outcome": "Bound retries, isolate a malformed message and reprocess it after repair.",
+    "boundary": "DLQs need owners, monitoring and safe replay; moving an event can affect ordering.",
+    "interview_pattern": "Event operations, reliable pipelines",
+    "sources": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-36",
+    "number": 36,
+    "series": 7,
+    "series_title": "Resilience and overload",
+    "title": "Deadlines, retries and jitter",
+    "hook": "Can retrying make an outage worse?",
+    "target_seconds": 90,
+    "outcome": "Propagate a deadline and disperse retries using backoff, jitter and a retry budget.",
+    "boundary": "Retry only suitable failures and protected operations; layered retries can multiply traffic.",
+    "interview_pattern": "Dependency failures, payment clients",
+    "sources": [
+      "https://sre.google/sre-book/handling-overload/",
+      "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-37",
+    "number": 37,
+    "series": 7,
+    "series_title": "Resilience and overload",
+    "title": "Backpressure and load shedding",
+    "hook": "What if requests arrive faster than work finishes?",
+    "target_seconds": 90,
+    "outcome": "Fill a bounded queue; distinguish slowing producers, limiting concurrency and rejecting excess work.",
+    "boundary": "An unbounded queue moves the outage into latency and memory; autoscaling takes time.",
+    "interview_pattern": "Workers, traffic spikes, uploads",
+    "sources": [
+      "https://sre.google/sre-book/handling-overload/",
+      "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-38",
+    "number": 38,
+    "series": 7,
+    "series_title": "Resilience and overload",
+    "title": "Rate limiting",
+    "hook": "Should a client burst or send steadily?",
+    "target_seconds": 90,
+    "outcome": "Compare token bucket, leaky bucket and a sliding-window policy against a clear quota.",
+    "boundary": "Distributed enforcement needs atomic decisions; per-user fairness and global limits differ.",
+    "interview_pattern": "API quotas, abuse prevention",
+    "sources": [
+      "https://sre.google/sre-book/handling-overload/",
+      "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-39",
+    "number": 39,
+    "series": 7,
+    "series_title": "Resilience and overload",
+    "title": "Circuit breakers and bulkheads",
+    "hook": "Can a broken dependency consume every worker?",
+    "target_seconds": 90,
+    "outcome": "Fail fast after repeated failures and isolate resource pools so unrelated work survives.",
+    "boundary": "A breaker needs recovery probes; isolation and fallback have capacity and correctness trade-offs.",
+    "interview_pattern": "Checkout dependencies, cascading failures",
+    "sources": [
+      "https://sre.google/sre-book/handling-overload/",
+      "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-40",
+    "number": 40,
+    "series": 7,
+    "series_title": "Resilience and overload",
+    "title": "Cache stampedes and hot keys",
+    "hook": "What happens when the popular key expires?",
+    "target_seconds": 90,
+    "outcome": "Contrast synchronized misses, jittered expiry, request coalescing and stale-while-revalidate.",
+    "boundary": "Negative caching helps repeated misses; hot-key capacity and freshness need separate decisions.",
+    "interview_pattern": "Viral content, cache recovery",
+    "sources": [
+      "https://sre.google/sre-book/handling-overload/",
+      "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-41",
+    "number": 41,
+    "series": 7,
+    "series_title": "Resilience and overload",
+    "title": "Multi-region recovery and disaster recovery",
+    "hook": "What survives when a region disappears?",
+    "target_seconds": 90,
+    "outcome": "Trace active-passive failover and separate replication, backups, RPO and RTO.",
+    "boundary": "Active-active adds conflict resolution; recovery targets must be tested, not assumed.",
+    "interview_pattern": "Global availability, durable products",
+    "sources": [
+      "https://sre.google/sre-book/handling-overload/",
+      "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-42",
+    "number": 42,
+    "series": 8,
+    "series_title": "Production decisions",
+    "title": "Observability, SLOs and error budgets",
+    "hook": "How do you know the system is healthy?",
+    "target_seconds": 75,
+    "outcome": "Tie request traces, metrics and logs to a user-visible latency or availability SLO.",
+    "boundary": "Use tail latency, queue age and actionable alerts; a green process is not a healthy user journey.",
+    "interview_pattern": "Operate any design",
+    "sources": [
+      "https://sre.google/sre-book/service-level-objectives/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-43",
+    "number": 43,
+    "series": 8,
+    "series_title": "Production decisions",
+    "title": "Authentication, authorization and tenant isolation",
+    "hook": "Can a logged-in user read someone else\u2019s data?",
+    "target_seconds": 75,
+    "outcome": "Separate identity verification from per-resource permission checks; propagate tenant scope through storage and caches.",
+    "boundary": "Tokens do not grant every permission; isolate cache keys and redact sensitive logs.",
+    "interview_pattern": "Multi-tenant SaaS, public APIs",
+    "sources": [
+      "https://sre.google/sre-book/service-level-objectives/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-44",
+    "number": 44,
+    "series": 8,
+    "series_title": "Production decisions",
+    "title": "Monoliths, service boundaries and discovery",
+    "hook": "Does this feature need a new service?",
+    "target_seconds": 75,
+    "outcome": "Choose boundaries by ownership, change patterns and independent scaling; show endpoint discovery after a split.",
+    "boundary": "A service split adds network failure and operational cost; microservices are not a required milestone.",
+    "interview_pattern": "Architecture evolution",
+    "sources": [
+      "https://sre.google/sre-book/service-level-objectives/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-45",
+    "number": 45,
+    "series": 8,
+    "series_title": "Production decisions",
+    "title": "Safe releases and schema evolution",
+    "hook": "Why did a harmless deploy break old clients?",
+    "target_seconds": 90,
+    "outcome": "Keep old and new versions compatible with expand\u2013migrate\u2013contract; use one canary and rollback example.",
+    "boundary": "Queued events, old clients and replicas outlive a deploy; destructive changes need staged migration.",
+    "interview_pattern": "API changes, production deployments",
+    "sources": [
+      "https://sre.google/sre-book/service-level-objectives/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-46",
+    "number": 46,
+    "series": 8,
+    "series_title": "Production decisions",
+    "title": "Cost, retention and data lifecycle",
+    "hook": "What does this design cost every month?",
+    "target_seconds": 75,
+    "outcome": "Estimate storage, replicas, request volume and egress; select retention and tiering from product requirements.",
+    "boundary": "Use assumed unit costs, not universal price claims; deletion must consider derived copies and backups.",
+    "interview_pattern": "Media, analytics, long-lived data",
+    "sources": [
+      "https://sre.google/sre-book/service-level-objectives/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-47",
+    "number": 47,
+    "series": 9,
+    "series_title": "Reusable product patterns",
+    "title": "Real-time updates",
+    "hook": "Does the server need to push, or both sides talk?",
+    "target_seconds": 75,
+    "outcome": "Choose polling, SSE or WebSockets from direction and update frequency; show reconnect and missed-event recovery.",
+    "boundary": "A live connection does not provide durable delivery; long polling is a variation, not a whole new architecture.",
+    "interview_pattern": "Chat, stock ticks, live tracking",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-48",
+    "number": 48,
+    "series": 9,
+    "series_title": "Reusable product patterns",
+    "title": "Feeds and fan-out",
+    "hook": "Why is a celebrity different from a normal user?",
+    "target_seconds": 90,
+    "outcome": "Compare fan-out-on-write with fan-out-on-read and a hybrid for skewed follower counts.",
+    "boundary": "Delivery, ranking and freshness are different concerns; materialized feeds need repair paths.",
+    "interview_pattern": "Social feeds, activity streams",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-49",
+    "number": 49,
+    "series": 9,
+    "series_title": "Reusable product patterns",
+    "title": "Search and autocomplete",
+    "hook": "Why is search not just a database filter?",
+    "target_seconds": 90,
+    "outcome": "Build a derived inverted index; distinguish document retrieval from prefix suggestion lookup.",
+    "boundary": "Indexes lag source data; typo tolerance and ranking are separate extensions.",
+    "interview_pattern": "Catalog search, autocomplete",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-50",
+    "number": 50,
+    "series": 9,
+    "series_title": "Reusable product patterns",
+    "title": "Media processing and delivery",
+    "hook": "What happens between Upload and Play?",
+    "target_seconds": 90,
+    "outcome": "Follow direct upload \u2192 queued transcoding \u2192 stored renditions \u2192 CDN \u2192 segment-based playback.",
+    "boundary": "Processing states, failed jobs and bandwidth matter; protocol details stay outside the core reel.",
+    "interview_pattern": "YouTube-style video, photos",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-51",
+    "number": 51,
+    "series": 9,
+    "series_title": "Reusable product patterns",
+    "title": "Notifications and webhooks",
+    "hook": "How does an event become one useful notification?",
+    "target_seconds": 75,
+    "outcome": "Trace a durable event through preferences, channel selection and a retrying delivery worker.",
+    "boundary": "Deduplication, provider throttles, callback signatures and receipt status need explicit ownership.",
+    "interview_pattern": "Email/push, webhooks",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-52",
+    "number": 52,
+    "series": 9,
+    "series_title": "Reusable product patterns",
+    "title": "Nearby queries and location updates",
+    "hook": "How do you find nearby drivers efficiently?",
+    "target_seconds": 75,
+    "outcome": "Turn coordinates into spatial cells, query candidate neighborhoods and filter exact distance.",
+    "boundary": "Cell boundaries and stale coordinates matter; matching and ETA are additional problems.",
+    "interview_pattern": "Ride matching, nearby places",
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-53",
+    "number": 53,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "URL shortener \u2014 minimal working design",
+    "hook": "Where does a short link come from?",
+    "target_seconds": 90,
+    "outcome": "State requirements and a worked traffic assumption; define create/redirect APIs, ID strategy and lookup storage.",
+    "boundary": "Explain redirects and expiry; keep analytics off the critical redirect path.",
+    "interview_pattern": "Read-heavy key lookup",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-54",
+    "number": 54,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "URL shortener \u2014 scale and failures",
+    "hook": "What if one short link becomes viral?",
+    "target_seconds": 90,
+    "outcome": "Evolve the same diagram with caching, sharding, abuse controls and redirect-path recovery.",
+    "boundary": "Choose a shard key and identify the actual failure bottleneck; avoid repeating concept definitions.",
+    "interview_pattern": "Hot keys, global reads",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-55",
+    "number": 55,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "Social feed \u2014 write and read paths",
+    "hook": "Who builds the feed before you open it?",
+    "target_seconds": 90,
+    "outcome": "Define post/follow/feed access patterns and materialized timelines using previously taught fan-out.",
+    "boundary": "Separate candidate delivery from ranking; show one practical cursor-pagination decision.",
+    "interview_pattern": "Fan-out and derived views",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-56",
+    "number": 56,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "Social feed \u2014 celebrity spike and repair",
+    "hook": "What happens when millions follow one author?",
+    "target_seconds": 90,
+    "outcome": "Switch high-fan-out authors to read-time merge; handle lag, duplicates and rebuild of derived feeds.",
+    "boundary": "Keep stable cursor semantics and a source of truth for repair.",
+    "interview_pattern": "Skew, asynchronous consistency",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-57",
+    "number": 57,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "Chat \u2014 durable message delivery",
+    "hook": "When is a message really sent?",
+    "target_seconds": 90,
+    "outcome": "Trace sender \u2192 durable append \u2192 receiver; define message IDs, conversation partitioning and acknowledgements.",
+    "boundary": "Distinguish accepted, delivered and read; connection state is separate from message storage.",
+    "interview_pattern": "Real-time plus durable storage",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-58",
+    "number": 58,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "Chat \u2014 reconnects, ordering and duplicates",
+    "hook": "What happens after the phone goes offline?",
+    "target_seconds": 90,
+    "outcome": "Resume from a cursor; deduplicate retried sends and recover connection routing after a node failure.",
+    "boundary": "Explain per-conversation order and lag; presence can be eventually consistent.",
+    "interview_pattern": "Session recovery, delivery guarantees",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-59",
+    "number": 59,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "Checkout \u2014 stock and payment invariants",
+    "hook": "How do you sell the last item only once?",
+    "target_seconds": 90,
+    "outcome": "Define stock reservation and order state; protect inventory with a conditional update and payment with idempotency.",
+    "boundary": "An invariant drives the architecture; payment, reservation and final order are distinct states.",
+    "interview_pattern": "Booking, inventory, money movement",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  },
+  {
+    "id": "lesson-60",
+    "number": 60,
+    "series": 10,
+    "series_title": "Interview case studies",
+    "title": "Checkout \u2014 partial failure and recovery",
+    "hook": "What if payment works but checkout times out?",
+    "target_seconds": 90,
+    "outcome": "Continue the same state machine with outbox events, compensation, retry handling and reconciliation.",
+    "boundary": "Specify reservation expiry and refund failure handling; one timeout does not determine payment outcome.",
+    "interview_pattern": "Distributed workflow correctness",
+    "sources": [
+      "https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+    ],
+    "template_version": 1
+  }
+]

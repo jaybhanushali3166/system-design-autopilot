@@ -1,0 +1,21 @@
+{
+  "name": "system-design-reels-autopilot",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-10-14",
+  "workers_dev": true,
+  "triggers": {"crons": ["* * * * *"]},
+  "vars": {
+    "GITHUB_REPOSITORY": "jaybhanushali3166/system-design-autopilot",
+    "GITHUB_REF": "main",
+    "GRAPH_API_VERSION": "v24.0",
+    "INSTAGRAM_USERNAME": "beyond.localhost",
+    "COURSE_ID": "system-design-crash-course-v1"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "system-design-reels-autopilot",
+    "database_id": "REPLACE_AFTER_DATABASE_CREATE",
+    "migrations_dir": "migrations"
+  }],
+  "observability": {"enabled": true}
+}

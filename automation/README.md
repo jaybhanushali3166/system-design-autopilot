@@ -1,0 +1,112 @@
+# Cloud reel autopilot
+
+An unattended production job and a paused-by-default Cloudflare scheduler for the 60-lesson course. The configured cadence is **Tuesday, Thursday, Saturday at 11:00 AM Asia/Kolkata**, with generation six hours earlier. The first date is assigned only after a successful cloud pilot.
+
+## Components
+
+- `catalog.py`: exports the approved curriculum and creates time-zone-aware release dates.
+- `content.py`: accepts bounded scene JSON from Gemini, or a reviewed pilot lesson. No generated code is executed.
+- `voice.py`: Kokoro ONNX voiceover, cached model, measured utterance-level captions.
+- `render.py`: trusted HTML/GSAP diagram families and local fonts.
+- `produce.py`: content → voice → composition → browser checks → MP4 → validation → optional upload/callback. It never publishes to Instagram.
+- `cloudflare/src/worker.mjs`: claims jobs, prepares Instagram media, publishes due releases and reconciles uncertain results.
+- `setup.py`: credential checks, encrypted GitHub secrets, paused cloud deployment, cloud pilots, queue activation and pause.
+- `.github/workflows/reel-production.yml`: reusable Linux production workflow.
+- `.github/workflows/reel-pilot.yml`: on the implementation branch, renders two pilots without uploading or publishing.
+
+The existing local Mac publisher remains untouched. It must not own the same dated queue as the cloud worker when live operation begins.
+
+## Verified protections
+
+The producer contains no Instagram publishing credentials. The scheduler uses persisted state and atomic claims. A publish timeout enters `PUBLISH_UNKNOWN`; it checks the stored container instead of issuing another publish request. Old job callbacks cannot replace a current result. Authentication and owned Cloudinary origins are checked. Invalid audio/video evidence is rejected. A missed window holds the lesson and preserves curriculum order.
+
+The public `/health` endpoint reports only the service name. Detailed status and queue controls require an administrator token. Production callbacks use a different token. New deployments start with generation and publication paused in D1.
+
+## Local setup and pilot
+
+From the repository root:
+
+```sh
+python3 -m venv .autopilot/venv
+.autopilot/venv/bin/python -m pip install --timeout 120 -r automation/requirements.txt
+npm ci
+.autopilot/venv/bin/python -m automation.setup doctor
+.autopilot/venv/bin/python -m automation.produce --lesson lesson-01 --provider approved --dry-run
+.autopilot/venv/bin/python -m automation.produce --lesson lesson-28 --provider approved --dry-run
+```
+
+Generated projects, reports, audio, model files and videos go into ignored `.autopilot/`. `--upload` is a separate explicit option. It uploads to the configured Cloudinary account; it still does not publish.
+
+Two hand-authored pilot lesson packets are included: requirements (`lesson-01`) and atomic inventory claims (`lesson-28`). Remaining lessons use Gemini content generation. Pilot availability does not mean all 60 finished scripts have been authored or fact checked. The catalog contains each lesson's scope, caveat and sources. AI-generated content requires the specified schema/technical gates; those are not proof of factual accuracy.
+
+## Account setup
+
+Existing Meta/Instagram and Cloudinary values can stay in ignored `.env`. Run:
+
+```sh
+.autopilot/venv/bin/python -m automation.setup credentials
+```
+
+The command prompts in the local terminal, with hidden input, for:
+
+- Cloudflare account ID and an account-scoped token with Workers Scripts Edit and D1 Edit.
+- A Google AI Studio free-tier API key.
+- GitHub access if the repository's Git credential helper is not already configured.
+
+It generates separate administrator/callback tokens and saves them to ignored `.env.autopilot` with owner-only permissions. Never send credential values in chat. `automation/.env.example` lists the variables.
+
+The deployment command transfers the configured credentials to the expected providers: Cloudinary/Gemini/callback credentials become encrypted secrets in this repository's GitHub Actions; Instagram and dispatch credentials become Cloudflare Worker secrets. Obtain authorization for these transfers before running deployment. A GitHub secret called `AUTOPILOT_CLOUDINARY_URL` keeps this pipeline separate from existing integrations.
+
+Do not use paid Gemini billing as an automatic fallback. If the free-tier call fails, the scheduler retries at most three production attempts and then holds the lesson. There is no automatic charge-bearing provider switch.
+
+## Cloud deployment and activation
+
+Merge the reviewed implementation branch so `.github/workflows/reel-production.yml` exists on the repository's default branch. Then:
+
+```sh
+.autopilot/venv/bin/python -m automation.setup deploy
+.autopilot/venv/bin/python -m automation.setup pilot --lesson lesson-01
+.autopilot/venv/bin/python -m automation.setup pilot --lesson lesson-28
+.autopilot/venv/bin/python -m automation.setup status
+```
+
+Deployment creates/uses a D1 database, applies its migration, deploys a paused Worker and configures secrets. No dates or live publication are enabled. `wrangler.deployed.json` is generated locally and ignored. The source config contains a database placeholder and cannot deploy without setup.
+
+The Worker must receive at least one successful uploaded GitHub dry-run callback before activation. Verify both pilot videos, actual Linux runtimes, and the Gemini provider before live operation. To verify generation once the key is available:
+
+```sh
+.autopilot/venv/bin/python -m automation.produce --lesson lesson-02 --provider gemini --prepare-only
+```
+
+Choose a first matching date with at least six hours remaining before the generation start. Use the user-approved date, not the example below:
+
+```sh
+.autopilot/venv/bin/python -m automation.setup activate --start-date YYYY-MM-DD
+.autopilot/venv/bin/python -m automation.setup pause
+```
+
+Activation imports all 60 dated entries, verifies Instagram account access and enables the Worker. It is the live-publication switch. Do not run it before the pilot/review and account-transfer requirements are satisfied.
+
+Inspect cloud jobs independently with:
+
+```sh
+.autopilot/venv/bin/python -m automation.setup runs
+```
+
+## Tests
+
+```sh
+python3 -m unittest discover -s automation/tests -v
+node --test automation/cloudflare/test/worker.test.mjs
+```
+
+Tests use a real in-memory SQLite database for D1 queries and stub external APIs. They cover concurrent claims/publishes, lost-response reconciliation, stale callbacks, disabled deployments, late holds, authentication, numeric media validation, account prerequisites and IST/UTC calendar boundaries.
+
+## Operating boundaries
+
+- Publication is minute-oriented and subject to platform delays; it is not an exact-second guarantee.
+- Expired tokens, API changes and quota exhaustion can require intervention.
+- A held or ambiguous lesson is intentionally not automatically republished; inspect its container/post and reset its state deliberately after resolving the cause.
+- On the free Worker plan, profile CPU use before live operation. Keep rendering and speech on the hosted Linux job.
+- Models, dependencies and seven-day review artifacts consume cache/storage. Benchmark the full Linux workload before choosing the ongoing cadence.
+- The implementation branch's automatic pilot uploads nothing. Uploaded pilots with callbacks are initiated explicitly after deployment.
