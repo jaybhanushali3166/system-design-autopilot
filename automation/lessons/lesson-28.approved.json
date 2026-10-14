@@ -1,0 +1,143 @@
+{
+  "caption": "Two buyers. One item. A read followed by a write is not enough. Protect the invariant with an atomic decision. #systemdesign #beyondlocalhost",
+  "scenes": [
+    {
+      "title": "Can two people buy the last item?",
+      "narration": "Imagine a store with one item left. Two customers click Buy at the same moment. Both requests succeed. How did the store sell an item it did not have?",
+      "kind": "comparison",
+      "nodes": [
+        {
+          "label": "BUYER A",
+          "value": "Buy last item",
+          "tone": "cyan"
+        },
+        {
+          "label": "BUYER B",
+          "value": "Buy last item",
+          "tone": "cyan"
+        },
+        {
+          "label": "INVENTORY",
+          "value": "One remaining",
+          "tone": "green"
+        }
+      ],
+      "note": "The invariant: stock never goes below zero."
+    },
+    {
+      "title": "The read is already stale.",
+      "narration": "Each request reads the inventory before either writes. Both see one item remaining. Each decides it is safe to proceed. That check does not reserve anything.",
+      "kind": "replicas",
+      "nodes": [
+        {
+          "label": "READ A",
+          "value": "remaining = 1",
+          "tone": "cyan"
+        },
+        {
+          "label": "READ B",
+          "value": "remaining = 1",
+          "tone": "cyan"
+        },
+        {
+          "label": "DECISION",
+          "value": "Both proceed",
+          "tone": "red"
+        }
+      ],
+      "note": "Reading availability is not claiming stock."
+    },
+    {
+      "title": "Protect one indivisible decision.",
+      "narration": "The fix is an atomic conditional update. Decrease inventory only if the remaining count is positive. The database evaluates that condition as part of the update, not in an earlier application read.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "BUY REQUEST",
+          "value": "Try to claim stock",
+          "tone": "cyan"
+        },
+        {
+          "label": "DATABASE",
+          "value": "Update if positive",
+          "tone": "green"
+        },
+        {
+          "label": "RESULT",
+          "value": "Inspect affected rows",
+          "tone": "cyan"
+        }
+      ],
+      "note": "Condition and mutation belong together."
+    },
+    {
+      "title": "One request wins. One does not.",
+      "narration": "The first update changes the count from one to zero. The second finds no eligible row. The application checks affected rows and tells that buyer the item is unavailable.",
+      "kind": "comparison",
+      "nodes": [
+        {
+          "label": "BUYER A",
+          "value": "Claim succeeded",
+          "tone": "green"
+        },
+        {
+          "label": "STOCK",
+          "value": "Now zero",
+          "tone": "green"
+        },
+        {
+          "label": "BUYER B",
+          "value": "No eligible row",
+          "tone": "red"
+        }
+      ],
+      "note": "Only one successful claim."
+    },
+    {
+      "title": "A bigger invariant needs more care.",
+      "narration": "For rules spanning multiple rows, choose appropriate locking or transaction isolation. Serializable transactions may abort a conflicting attempt. Handle that retry. The database cannot protect an external payment by itself.",
+      "kind": "workflow",
+      "nodes": [
+        {
+          "label": "LOCAL ROWS",
+          "value": "Transaction boundary",
+          "tone": "cyan"
+        },
+        {
+          "label": "CONFLICT",
+          "value": "Abort and retry",
+          "tone": "red"
+        },
+        {
+          "label": "PAYMENT",
+          "value": "Separate protection",
+          "tone": "muted"
+        }
+      ],
+      "note": "State the invariant and its boundary."
+    },
+    {
+      "title": "Check and act must agree.",
+      "narration": "Remember: a successful read is not a reservation. Protect the business invariant with an atomic operation, inspect the result, and plan for conflicts. This pattern appears in stock, ticket booking, and quotas.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "INVARIANT",
+          "value": "No overselling",
+          "tone": "green"
+        },
+        {
+          "label": "ATOMIC CLAIM",
+          "value": "Choose one winner",
+          "tone": "cyan"
+        },
+        {
+          "label": "RESULT",
+          "value": "Accept or reject",
+          "tone": "green"
+        }
+      ],
+      "note": "One invariant. One atomic decision."
+    }
+  ]
+}

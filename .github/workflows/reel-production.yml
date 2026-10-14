@@ -1,0 +1,127 @@
+name: Produce one system design reel
+on:
+  workflow_call:
+    inputs:
+      lesson_id:
+        required: true
+        type: string
+      job_token:
+        default: ''
+        type: string
+      worker_url:
+        default: ''
+        type: string
+      dry_run:
+        default: true
+        type: boolean
+      upload_media:
+        default: true
+        type: boolean
+      provider:
+        default: approved
+        type: string
+    secrets:
+      AUTOPILOT_CLOUDINARY_URL:
+        required: false
+      GEMINI_API_KEY:
+        required: false
+      AUTOPILOT_CALLBACK_TOKEN:
+        required: false
+      AUTOPILOT_WORKER_URL:
+        required: false
+  workflow_dispatch:
+    inputs:
+      lesson_id:
+        description: Curriculum lesson ID
+        required: true
+        default: lesson-01
+      job_token:
+        description: Scheduler claim (empty for dry runs)
+        default: ''
+      worker_url:
+        description: Scheduler URL (must match configured secret)
+        default: ''
+      dry_run:
+        description: Report pilot result without publishing
+        type: boolean
+        default: true
+      upload_media:
+        description: Upload validated media to Cloudinary
+        type: boolean
+        default: true
+      provider:
+        description: Content provider (approved supports pilot lessons 01 and 28)
+        type: choice
+        options: [gemini, approved]
+        default: gemini
+permissions:
+  contents: read
+concurrency:
+  group: reel-${{ inputs.lesson_id }}
+  cancel-in-progress: false
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+      CLOUDINARY_URL: ${{ secrets.AUTOPILOT_CLOUDINARY_URL }}
+      AUTOPILOT_CALLBACK_TOKEN: ${{ secrets.AUTOPILOT_CALLBACK_TOKEN }}
+      AUTOPILOT_WORKER_URL: ${{ secrets.AUTOPILOT_WORKER_URL }}
+      DO_NOT_TRACK: '1'
+      LESSON_ID: ${{ inputs.lesson_id }}
+      JOB_TOKEN: ${{ inputs.job_token }}
+      WORKER_URL: ${{ inputs.worker_url }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      UPLOAD_MEDIA: ${{ inputs.upload_media }}
+      CONTENT_PROVIDER: ${{ inputs.provider || 'gemini' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: automation/requirements.txt
+      - name: Validate input before filesystem or network operations
+        run: |
+          python -c 'import os,re; assert re.fullmatch(r"lesson-(0[1-9]|[1-5][0-9]|60)",os.environ["LESSON_ID"])'
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg libsndfile1
+          npm ci
+          pip install --timeout 120 -r automation/requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .autopilot/models
+            ~/.cache/puppeteer
+          key: reel-models-linux-kokoro-v1-hf-0.8.156
+      - name: Validate and produce (no Instagram credentials on this runner)
+        run: |
+          args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER")
+          if [ "$UPLOAD_MEDIA" = "true" ]; then args+=(--upload); fi
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          if [ -n "$JOB_TOKEN" ]; then args+=(--job-token "$JOB_TOKEN"); fi
+          if [ -n "$WORKER_URL" ]; then args+=(--worker-url "$WORKER_URL"); fi
+          python -m automation.produce "${args[@]}"
+      - name: Retain review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel-${{ inputs.lesson_id }}-${{ github.run_id }}
+          path: |
+            .autopilot/runs/**/reel.mp4
+            .autopilot/runs/**/cover.png
+            .autopilot/runs/**/review-*.png
+            .autopilot/runs/**/result.json
+            .autopilot/runs/**/check.json
+            .autopilot/runs/**/content.json
+            .autopilot/runs/**/captions.srt
+          retention-days: 7
+          if-no-files-found: ignore

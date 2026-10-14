@@ -1,0 +1,25 @@
+{
+  "course_id": "system-design-crash-course-v1",
+  "channel": "@beyond.localhost",
+  "repository": "jaybhanushali3166/system-design-autopilot",
+  "timezone": "Asia/Kolkata",
+  "weekdays": [
+    1,
+    3,
+    5
+  ],
+  "publish_time": "11:00",
+  "start_date": null,
+  "generation_lead_minutes": 360,
+  "prepare_lead_minutes": 30,
+  "late_window_minutes": 30,
+  "publishing_enabled": false,
+  "generation_provider": "gemini",
+  "voice": "am_michael",
+  "max_generation_attempts": 3,
+  "max_duration_seconds": 105,
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "hyperframes_version": "0.8.156"
+}

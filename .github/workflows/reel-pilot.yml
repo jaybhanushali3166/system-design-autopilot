@@ -1,0 +1,21 @@
+name: Cloud reel pilot
+on:
+  push:
+    branches: [autopilot/cloud-reels]
+    paths: ['automation/**', '.github/workflows/reel-*.yml', 'SYSTEM_DESIGN_CRASH_COURSE_MASTER_PLAN.md']
+permissions:
+  contents: read
+jobs:
+  pilot:
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        lesson: [lesson-01, lesson-28]
+    uses: ./.github/workflows/reel-production.yml
+    with:
+      lesson_id: ${{ matrix.lesson }}
+      dry_run: true
+      provider: approved
+      upload_media: false
+    secrets: inherit

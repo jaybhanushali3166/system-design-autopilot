@@ -20,3 +20,10 @@ __pycache__/
 *$py.class
 .venv/
 venv/
+
+# Cloud reel pipeline: credentials, generated media and local tool state
+.env.autopilot
+.autopilot/
+automation/cloudflare/.dev.vars
+automation/cloudflare/.wrangler/
+automation/cloudflare/wrangler.deployed.json

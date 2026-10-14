@@ -1,0 +1,133 @@
+{
+  "caption": "System design starts with guarantees, not a shopping list of tools. Ask what users do, how much load to expect, and which failures are acceptable. #systemdesign #beyondlocalhost",
+  "scenes": [
+    {
+      "title": "Before you draw a single box\u2026",
+      "narration": "You are asked to design a chat app. Do you start with a database? First, ask what this system must guarantee. A good architecture starts with the problem.",
+      "kind": "comparison",
+      "nodes": [
+        {
+          "label": "OPTION A",
+          "value": "Choose tools first",
+          "tone": "red"
+        },
+        {
+          "label": "OPTION B",
+          "value": "Define guarantees",
+          "tone": "green"
+        }
+      ],
+      "note": "Requirements decide the architecture."
+    },
+    {
+      "title": "Same product. Different system.",
+      "narration": "A family chat and an emergency dispatch system both send messages. But a delayed family message and a delayed emergency alert have very different consequences.",
+      "kind": "comparison",
+      "nodes": [
+        {
+          "label": "FAMILY CHAT",
+          "value": "Small group of users",
+          "tone": "cyan"
+        },
+        {
+          "label": "DISPATCH",
+          "value": "Time-sensitive alerts",
+          "tone": "red"
+        }
+      ],
+      "note": "The name of the product is not enough."
+    },
+    {
+      "title": "Ask what users actually do.",
+      "narration": "Define the core user flow. A person sends a message. Another person receives it. Must users search history? Can they send while the receiver is offline?",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "SENDER",
+          "value": "Send message",
+          "tone": "cyan"
+        },
+        {
+          "label": "STORAGE",
+          "value": "Keep history?",
+          "tone": "muted"
+        },
+        {
+          "label": "RECEIVER",
+          "value": "Receive offline?",
+          "tone": "green"
+        }
+      ],
+      "note": "These are functional requirements."
+    },
+    {
+      "title": "Then ask how well it must work.",
+      "narration": "Now define measurable constraints. How many active users? What delivery delay is acceptable? Can a confirmed message ever be lost? These answers drive capacity and durability choices.",
+      "kind": "comparison",
+      "nodes": [
+        {
+          "label": "CAPACITY",
+          "value": "Expected active users",
+          "tone": "cyan"
+        },
+        {
+          "label": "LATENCY",
+          "value": "Acceptable delay",
+          "tone": "cyan"
+        },
+        {
+          "label": "DURABILITY",
+          "value": "Allowed data loss",
+          "tone": "green"
+        }
+      ],
+      "note": "Make assumptions explicit."
+    },
+    {
+      "title": "Ask what happens during failure.",
+      "narration": "If a region disconnects, should the system accept messages with delayed delivery? Or refuse until it can guarantee the result? Decide what the user sees before choosing components.",
+      "kind": "replicas",
+      "nodes": [
+        {
+          "label": "REGION A",
+          "value": "Connected",
+          "tone": "green"
+        },
+        {
+          "label": "REGION B",
+          "value": "Disconnected",
+          "tone": "red"
+        },
+        {
+          "label": "USER",
+          "value": "Delay or refuse?",
+          "tone": "cyan"
+        }
+      ],
+      "note": "A failure policy is a product decision."
+    },
+    {
+      "title": "A defensible design starts here.",
+      "narration": "Remember three questions. What must users do? How much load must we serve? What must remain true when something fails? Next, turn those assumptions into a traffic estimate.",
+      "kind": "workflow",
+      "nodes": [
+        {
+          "label": "USER FLOW",
+          "value": "What must work?",
+          "tone": "cyan"
+        },
+        {
+          "label": "LOAD",
+          "value": "How much traffic?",
+          "tone": "cyan"
+        },
+        {
+          "label": "GUARANTEE",
+          "value": "What must stay true?",
+          "tone": "green"
+        }
+      ],
+      "note": "Requirements \u2192 estimates \u2192 architecture."
+    }
+  ]
+}
