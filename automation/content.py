@@ -38,7 +38,7 @@ def generate(lesson, provider='gemini'):
   return validate(json.loads(p.read_text()))
  key=os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
  if not key: raise ValueError('GEMINI_API_KEY missing; set it securely or choose an approved lesson for the pilot')
- model=os.environ.get('GEMINI_MODEL','gemini-2.5-flash')
+ model=os.environ.get('GEMINI_MODEL','gemini-3-flash-preview')
  if not re.fullmatch(r'[a-zA-Z0-9._-]+',model): raise ValueError('Invalid model ID')
  prompt='''Create an English vertical system-design explainer for software engineers. Output JSON only.
 Use the supplied curriculum packet as the scope and guardrails. Six scenes: concrete hook, failure/problem,

@@ -65,7 +65,7 @@ jobs:
     timeout-minutes: 40
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3-flash-preview' }}
       CLOUDINARY_URL: ${{ secrets.AUTOPILOT_CLOUDINARY_URL }}
       AUTOPILOT_CALLBACK_TOKEN: ${{ secrets.AUTOPILOT_CALLBACK_TOKEN }}
       AUTOPILOT_WORKER_URL: ${{ secrets.AUTOPILOT_WORKER_URL }}
