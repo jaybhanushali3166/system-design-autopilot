@@ -10,6 +10,7 @@ from .voice import synthesize
 from .gemini_voice import identity as voice_identity
 from .render import build
 from .validate import validate_video
+from .thumbnail import render_cover
 
 def hf(project,*args,report=None):
  cmd=['npx','--yes',f'hyperframes@{config()["hyperframes_version"]}',*args]
@@ -26,7 +27,8 @@ def upload(project,lesson,hash_value):
  # Stable asset IDs make production retries reuse the same identity; content changes use a new hash.
  base=f'course/{config()["course_id"]}/{lesson["id"]}/{hash_value[:16]}'
  video=cloudinary.uploader.upload_large(str(project/'reel.mp4'),resource_type='video',public_id=base,overwrite=True,timeout=120)
- cover=cloudinary.uploader.upload(str(project/'cover.png'),resource_type='image',public_id=base+'-cover',overwrite=True,timeout=120)
+ cover_metadata=json.loads((project/'cover.json').read_text())
+ cover=cloudinary.uploader.upload(str(project/'cover.jpg'),resource_type='image',public_id=base+'-cover-'+cover_metadata['template_hash'][:12],overwrite=True,timeout=120)
  return video['secure_url'],cover['secure_url']
 
 def callback(url,data):
@@ -69,13 +71,13 @@ def run(args):
  if not args.resume or not (project/'reel.mp4').exists() or previous.get('content_hash')!=hash_value:
   hf(project,'render','--quality','delivery','--fps','30','--strict','--output','reel.mp4')
  validate=validate_video(project/'reel.mp4',audio['duration'],True)
- subprocess.run(['ffmpeg','-y','-v','error','-ss','3','-i',str(project/'reel.mp4'),'-frames:v','1',str(project/'cover.png')],check=True)
+ cover_metadata=render_cover(lesson,lessons,project)
  # Evidence snapshots are extracted from the final encoded video, at each scene's proof pose.
  for scene in audio['scenes']:
   midpoint=scene['start']+scene['duration']*.65
   subprocess.run(['ffmpeg','-y','-v','error','-ss',str(midpoint),'-i',str(project/'reel.mp4'),'-frames:v','1',str(project/f'review-{scene["index"]}.png')],check=True)
  result={'lesson_id':lesson['id'],'job_token':args.job_token,'content_hash':hash_value,
-         'validation':validate,'voice_profile':voice_profile,'caption':content['caption'],'dry_run':args.dry_run,
+         'validation':validate,'voice_profile':voice_profile,'cover':cover_metadata,'caption':content['caption'],'dry_run':args.dry_run,
          'run_id':os.environ.get('GITHUB_RUN_ID','local'),'video_url':None,'cover_url':None}
  write_json(project/'result.json',result)
  if args.upload:

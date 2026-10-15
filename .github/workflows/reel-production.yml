@@ -118,6 +118,8 @@ jobs:
           path: |
             .autopilot/runs/**/reel.mp4
             .autopilot/runs/**/cover.png
+            .autopilot/runs/**/cover.jpg
+            .autopilot/runs/**/cover.json
             .autopilot/runs/**/review-*.png
             .autopilot/runs/**/result.json
             .autopilot/runs/**/check.json

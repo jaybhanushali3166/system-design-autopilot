@@ -1,9 +1,9 @@
 name: Autopilot checks
 on:
   pull_request:
-    paths: ['automation/**', '.github/workflows/*reel*', '.github/workflows/autopilot-checks.yml']
+    paths: ['automation/**', 'src/components/thumbnails/**', 'src/utils/fonts.ts', '.github/workflows/*reel*', '.github/workflows/autopilot-checks.yml']
   push:
-    paths: ['automation/**', '.github/workflows/*reel*', '.github/workflows/autopilot-checks.yml']
+    paths: ['automation/**', 'src/components/thumbnails/**', 'src/utils/fonts.ts', '.github/workflows/*reel*', '.github/workflows/autopilot-checks.yml']
 permissions:
   contents: read
 jobs:

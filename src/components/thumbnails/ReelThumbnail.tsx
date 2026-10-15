@@ -3,7 +3,12 @@ import { AbsoluteFill } from "remotion";
 import { ThumbnailItem } from "../../data/thumbnails";
 import { FONT_HEAD, FONT_BODY } from "../../utils/fonts";
 
-export const ReelThumbnail: React.FC<{ item: ThumbnailItem }> = ({ item }) => {
+export const ReelThumbnail: React.FC<{
+  item: ThumbnailItem;
+  diagram?: React.ReactNode;
+  footerLabel?: string;
+  sectionLabel?: string;
+}> = ({ item, diagram, footerLabel, sectionLabel }) => {
   const { category, title, subtitle, accentColor, tags, diagramType } = item;
 
   return (
@@ -68,6 +73,7 @@ export const ReelThumbnail: React.FC<{ item: ThumbnailItem }> = ({ item }) => {
           Ensures perfect 1:1 Instagram profile grid presentation!
          ───────────────────────────────────────────────────────────── */}
       <div
+        data-thumbnail-safe="true"
         style={{
           position: "absolute",
           top: 420,
@@ -146,6 +152,11 @@ export const ReelThumbnail: React.FC<{ item: ThumbnailItem }> = ({ item }) => {
 
         {/* ── TITLE & SUBTITLE HEADLINE ── */}
         <div style={{ width: "100%", textAlign: "center", marginTop: 4 }}>
+          {sectionLabel && (
+            <div style={{ fontFamily: FONT_HEAD, fontSize: 21, fontWeight: 700, letterSpacing: 2, color: "#CBD5E1", marginBottom: 12 }}>
+              {sectionLabel}
+            </div>
+          )}
           <h1
             style={{
               fontFamily: FONT_HEAD,
@@ -211,7 +222,7 @@ export const ReelThumbnail: React.FC<{ item: ThumbnailItem }> = ({ item }) => {
             }}
           />
 
-          {renderDiagram(diagramType, accentColor)}
+          {diagram ?? renderDiagram(diagramType, accentColor)}
         </div>
 
         {/* ── BOTTOM INFORMATIVE PILLS (What you will learn) ── */}
@@ -260,7 +271,7 @@ export const ReelThumbnail: React.FC<{ item: ThumbnailItem }> = ({ item }) => {
             marginTop: 4,
           }}
         >
-          SWIPE FOR SENIOR SYSTEM BREAKDOWN ➔
+          {footerLabel ?? "SWIPE FOR SENIOR SYSTEM BREAKDOWN ➔"}
         </div>
       </div>
     </AbsoluteFill>
