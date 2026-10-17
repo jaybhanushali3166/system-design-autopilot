@@ -59,7 +59,17 @@ The production voice is Gemini **Varo** (`en-us-varo`) on `gemini-3.8-flash-tts`
 
 Voice/model/style identity participates in narration and media hashes, so a resumed Kokoro job cannot reuse its old voice audio as Varo. Gemini rate limits and temporary service errors receive bounded retries; permanent access errors stop. There is no automatic change of voice or paid provider. The scheduler's existing retry/hold policy applies if narration fails.
 
-Speech responses and alignment data are cached per script and voice profile inside a job. The small Whisper model is cached on the GitHub runner. Source deployment defaults remain paused; live dates and enabled state are held in Cloudflare D1 and are not changed by a voice update.
+Speech responses and alignment data are cached per script and voice profile. The workflow restores the script and completed scenes from the most recent compatible attempt and saves progress even when production fails; retries use `--resume`. Cached progress excludes credentials, job tokens, and callback results. The small Whisper model is cached on the GitHub runner. Source deployment defaults remain paused; live dates and enabled state are held in Cloudflare D1 and are not changed by a voice update.
+
+### Gemini quota handling
+
+Google measures limits per project and model across requests per minute, input tokens per minute, and requests per day. The actual account limits are shown in [AI Studio](https://aistudio.google.com/usage?timeRange=last-28-days&tab=rate-limit); they are not universal guarantees. Daily request quotas reset at midnight in `America/Los_Angeles`, including daylight-saving changes. See [Google's rate-limit guide](https://ai.google.dev/gemini-api/docs/rate-limits).
+
+Production starts voice requests at least **65 seconds apart** (`gemini_voice_interval_seconds`), a conservative one-request-per-minute policy rather than an assumed account entitlement. All production workflows share one concurrency group to avoid overlapping narration jobs. Other clients using the same Google project still share its quota.
+
+Both content and voice REST calls use bounded exponential backoff with jitter for transient network errors and HTTP 408, 429, 500, 502, 503 and 504, honoring `Retry-After` and structured `google.rpc.RetryInfo` hints. Daily quota errors stop the job and defer the scheduler until the next Pacific reset (or a later provider hint); long cooldowns also defer rather than occupy a runner. A cooldown beyond publication's existing deadline holds the lesson and preserves order. Errors such as 400/402/403 stop immediately. No billing, model, or voice switch is performed. See [Google's retry guidance](https://ai.google.dev/gemini-api/docs/troubleshooting#retry-strategy).
+
+Allowlisted diagnostics record HTTP status, quota category, and retry time in `generation-error.json` and the job log. Raw API errors and credential-bearing URLs are never logged. An unclassified 429 gets bounded backoff; spacing cannot bypass a daily quota or guarantee that a shared project will never be throttled.
 
 ## Account setup
 

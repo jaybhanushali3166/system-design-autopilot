@@ -1,8 +1,8 @@
 """Generate schema-bound lesson content; never execute model-provided code."""
 from __future__ import annotations
 import json, os, re, hashlib
-import requests
 from .common import ROOT, load_env
+from .gemini_http import post
 KINDS = ['flow','queue','replicas','ring','comparison','index','workflow','metric']
 SCHEMA = {'type':'object','properties':{
  'caption':{'type':'string'},
@@ -53,11 +53,10 @@ queue shows arrival/work; replicas show versions; index shows an access path; ri
 comparison compares decisions; metric visualizes a workload. Do not use decorative diagrams unrelated to narration.
 Keep the caption useful and include #systemdesign #beyondlocalhost.
 Packet: '''+json.dumps(lesson)
- response=requests.post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-  headers={'x-goog-api-key':key},json={'contents':[{'parts':[{'text':prompt}]}],
-  'generationConfig':{'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.5}},timeout=(10,120))
- if response.status_code!=200: raise RuntimeError(f'Content generation failed (HTTP {response.status_code})')
- payload=response.json();parts=payload.get('candidates',[{}])[0].get('content',{}).get('parts',[])
+ payload=post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+  key=key,model=model,payload={'contents':[{'parts':[{'text':prompt}]}],
+  'generationConfig':{'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.5}})
+ parts=payload.get('candidates',[{}])[0].get('content',{}).get('parts',[])
  text=''.join(p.get('text','') for p in parts if not p.get('thought'))
  return validate(json.loads(text))
 

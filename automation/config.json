@@ -24,5 +24,6 @@
   "hyperframes_version": "0.8.156",
   "voice_provider": "gemini",
   "voice_model": "gemini-3.8-flash-tts",
+  "gemini_voice_interval_seconds": 65,
   "alignment_model": "tiny.en"
 }

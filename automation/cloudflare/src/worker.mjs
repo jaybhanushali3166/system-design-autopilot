@@ -177,7 +177,9 @@ async function fetchHandler(request,env) {
   if(row.state!=='GENERATING') return json({ignored:true,state:row.state});
   if(row.lease_until<=now) return json({error:'Generation claim expired'},409);
   if(data.error) {
-   await env.DB.prepare("UPDATE lessons SET state=?,next_retry_at=?,error=? WHERE id=? AND state='GENERATING' AND job_token=?").bind(row.attempts>=3?'HELD':'RETRYABLE_FAILURE',now+900,'Production failed; inspect GitHub run logs',row.id,row.job_token).run();
+   // Respect a provider's daily reset/long cooldown instead of starting more jobs.
+   const retryAt=Number.isSafeInteger(data.retry_at)?Math.max(now+900,Math.min(data.retry_at,now+172800)):now+900;
+   await env.DB.prepare("UPDATE lessons SET state=?,next_retry_at=?,error=? WHERE id=? AND state='GENERATING' AND job_token=?").bind(row.attempts>=3?'HELD':'RETRYABLE_FAILURE',retryAt,'Production failed; inspect GitHub run logs',row.id,row.job_token).run();
   } else {
    validateResult(data,env.CLOUDINARY_CLOUD_NAME);
    const caption=`${data.caption}\n\n[SDCC:${row.id}]`;

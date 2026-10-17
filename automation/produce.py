@@ -5,7 +5,8 @@ from pathlib import Path
 import requests
 from .common import ROOT,WORK,config,load_env,write_json
 from .catalog import build_catalog
-from .content import generate,digest
+from .content import generate,digest,validate
+from .gemini_http import GeminiRequestError
 from .voice import synthesize
 from .gemini_voice import identity as voice_identity
 from .render import build
@@ -47,13 +48,21 @@ def callback(url,data):
    if attempt==2:raise RuntimeError('Worker callback failed; inspect the cloud run') from None
   time.sleep(2**attempt)
 
+def lesson_content(lesson, provider, project, resume):
+ # A restored runner must use exactly the same script to reuse its scene audio.
+ source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview')}
+ manifest=project/'content-source.json'
+ if resume and (project/'content.json').exists() and manifest.exists() and json.loads(manifest.read_text())==source:
+  return validate(json.loads((project/'content.json').read_text()))
+ content=generate(lesson,provider)
+ write_json(project/'content.json',content);write_json(manifest,source)
+ return content
+
 def run(args):
  load_env();lessons=build_catalog();lesson=next((x for x in lessons if x['id']==args.lesson),None)
  if not lesson:raise ValueError('Unknown lesson ID')
  project=WORK/'runs'/lesson['id'];project.mkdir(parents=True,exist_ok=True)
- if args.resume and (project/'content.json').exists():content=json.loads((project/'content.json').read_text())
- else:
-  content=generate(lesson,args.provider);write_json(project/'content.json',content)
+ content=lesson_content(lesson,args.provider,project,args.resume)
  if args.prepare_only:
   print(f'Content prepared for {lesson["id"]}; no voice, upload or publication');return
  voice_profile=voice_identity(config())
@@ -93,9 +102,15 @@ if __name__=='__main__':
  parser.add_argument('--job-token',default='');parser.add_argument('--worker-url',default='');args=parser.parse_args()
  try:run(args)
  except Exception as exc:
+  diagnostic=exc.diagnostic() if isinstance(exc,GeminiRequestError) else {'type':type(exc).__name__}
+  # Persist allowlisted evidence, never raw exceptions or credential-bearing URLs.
+  if re.fullmatch(r'lesson-(0[1-9]|[1-5][0-9]|60)',args.lesson):
+   write_json(WORK/'runs'/args.lesson/'generation-error.json',diagnostic)
   if args.worker_url and args.job_token:
-   try:callback(args.worker_url,{'lesson_id':args.lesson,'job_token':args.job_token,'error':True})
+   try:callback(args.worker_url,{'lesson_id':args.lesson,'job_token':args.job_token,'error':True,
+    **({'retry_at':exc.retry_at} if isinstance(exc,GeminiRequestError) and exc.retry_at else {})})
    except Exception:pass
+  print('Production diagnostic: '+json.dumps(diagnostic))
   # Provider libraries can include credential-bearing URLs in exceptions. Keep console errors generic.
   print(f'Production failed at {type(exc).__name__}; no publication attempted. Check dependencies/configuration or local reports.')
   raise SystemExit(1)
