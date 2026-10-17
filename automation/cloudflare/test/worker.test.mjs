@@ -77,3 +77,27 @@ test('unreachable reconciliation is held after the deadline without republishing
  globalThis.fetch=async(url,options)=>{assert.equal(options.method,'GET');calls++;throw new Error('API unavailable');};
  try{await reconcile(env,row,row.publish_at+1801);assert.equal(calls,1);assert.equal(env.db.prepare('SELECT state FROM lessons').get().state,'HELD');}finally{globalThis.fetch=saved;}
 });
+test('provider cooldown prevents another generation dispatch before retry time',async()=>{
+ const env=environment(),row=insert(env,'GENERATING'),saved=globalThis.fetch;
+ const now=Math.floor(Date.now()/1000),retryAt=now+3600;
+ env.db.prepare('UPDATE lessons SET publish_at=?,generate_at=?').run(now+21600,now-60);
+ env.db.exec("UPDATE settings SET value='true'");
+ const res=await worker.fetch(request({...sample,error:true,retry_at:retryAt}),env);
+ assert.equal(res.status,200);
+ assert.equal(env.db.prepare('SELECT next_retry_at FROM lessons').get().next_retry_at,retryAt);
+ let calls=0;globalThis.fetch=async()=>{calls++;return new Response(null,{status:204});};
+ try{
+  await tick(env,retryAt-1);assert.equal(calls,0);
+  await tick(env,retryAt);assert.equal(calls,1);
+ }finally{globalThis.fetch=saved;}
+});
+test('callback cooldown is bounded and cannot replace a stale claim',async()=>{
+ const env=environment();insert(env,'GENERATING');
+ const now=Math.floor(Date.now()/1000);
+ await worker.fetch(request({...sample,error:true,retry_at:Number.MAX_SAFE_INTEGER}),env);
+ const retry=env.db.prepare('SELECT next_retry_at FROM lessons').get().next_retry_at;
+ assert.ok(retry>=now+172800&&retry<=now+172802);
+ const res=await worker.fetch(request({...sample,job_token:'stale',error:true,retry_at:now+10}),env);
+ assert.equal(res.status,409);
+ assert.equal(env.db.prepare('SELECT next_retry_at FROM lessons').get().next_retry_at,retry);
+});

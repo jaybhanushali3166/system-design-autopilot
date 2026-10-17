@@ -57,7 +57,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: reel-${{ inputs.lesson_id }}
+  # All lessons share the Google project's model quotas, including manual jobs.
+  group: reels-gemini-production
   cancel-in-progress: false
 jobs:
   produce:
@@ -102,14 +103,40 @@ jobs:
             .autopilot/models
             ~/.cache/puppeteer
           key: reel-models-linux-varo-tiny-en-v1-hf-0.8.156
+      - name: Restore completed narration from prior attempts
+        id: progress-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .autopilot/runs/${{ inputs.lesson_id }}/content.json
+            .autopilot/runs/${{ inputs.lesson_id }}/content-source.json
+            .autopilot/runs/${{ inputs.lesson_id }}/speech-*.json
+            .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
+            .autopilot/runs/${{ inputs.lesson_id }}/audio.json
+            .autopilot/runs/${{ inputs.lesson_id }}/assets
+          key: reel-progress-v1-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            reel-progress-v1-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
-          args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER")
+          args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER" --resume)
           if [ "$UPLOAD_MEDIA" = "true" ]; then args+=(--upload); fi
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           if [ -n "$JOB_TOKEN" ]; then args+=(--job-token "$JOB_TOKEN"); fi
           if [ -n "$WORKER_URL" ]; then args+=(--worker-url "$WORKER_URL"); fi
           python -m automation.produce "${args[@]}"
+      - name: Save completed narration even when generation fails
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .autopilot/runs/${{ inputs.lesson_id }}/content.json
+            .autopilot/runs/${{ inputs.lesson_id }}/content-source.json
+            .autopilot/runs/${{ inputs.lesson_id }}/speech-*.json
+            .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
+            .autopilot/runs/${{ inputs.lesson_id }}/audio.json
+            .autopilot/runs/${{ inputs.lesson_id }}/assets
+          key: ${{ steps.progress-cache.outputs.cache-primary-key }}
       - name: Retain review evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -126,5 +153,6 @@ jobs:
             .autopilot/runs/**/content.json
             .autopilot/runs/**/audio.json
             .autopilot/runs/**/captions.srt
+            .autopilot/runs/**/generation-error.json
           retention-days: 7
           if-no-files-found: ignore
