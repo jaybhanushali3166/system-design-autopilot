@@ -2,6 +2,8 @@
 
 Automated generation, rendering, and publishing pipeline for high-quality System Design short-form reels (Instagram Reels / YouTube Shorts) using [Remotion](https://www.remotion.dev/), Three.js, GSAP, and automated voiceover synthesis.
 
+**Link to the page**: https://www.instagram.com/beyond.localhost?srtk=MTI2NHpjemZua2J6cg%3D%3D&utm_source=qr
+
 ## 📦 Features
 
 - **Automated Video Compositions**: Programmatic motion graphics, architecture diagrams, and animated components via Remotion & React.
