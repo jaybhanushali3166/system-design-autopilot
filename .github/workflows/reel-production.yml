@@ -154,6 +154,7 @@ jobs:
             .autopilot/runs/**/check.json
             .autopilot/runs/**/content.json
             .autopilot/runs/**/audio.json
+            .autopilot/runs/**/alignment-*.json
             .autopilot/runs/**/captions.srt
             .autopilot/runs/**/generation-error.json
             .autopilot/runs/**/creative-feedback.json
