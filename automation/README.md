@@ -1,6 +1,6 @@
 # Cloud reel autopilot
 
-An unattended production job and a paused-by-default Cloudflare scheduler for the 60-lesson course. The configured cadence is **Tuesday, Thursday, Saturday at 11:00 AM Asia/Kolkata**, with generation six hours earlier. The first date is assigned only after a successful cloud pilot.
+An unattended production job and a paused-by-default Cloudflare scheduler for the 60-lesson course. The configured cadence is **daily at 11:00 AM Asia/Kolkata**, with generation six hours earlier. The first date is assigned only after a successful cloud pilot.
 
 ## Components
 
@@ -142,3 +142,11 @@ Tests use a real in-memory SQLite database for D1 queries and stub external APIs
 - On the free Worker plan, profile CPU use before live operation. Keep rendering and speech on the hosted Linux job.
 - Models, dependencies and seven-day review artifacts consume cache/storage. Benchmark the full Linux workload before choosing the ongoing cadence.
 - The implementation branch's automatic pilot uploads nothing. Uploaded pilots with callbacks are initiated explicitly after deployment.
+
+## Daily creative policy and Insights
+
+The approved default is a light workshop reel, a dark series cover with a truthful curiosity-led headline, and continuous English Gemini Varo narration. Every new script follows one concrete example, brings a useful contrast into the opening teaching beat, and ends with a reusable diagnostic or reference. Captions are measured 3–5-word groups. `creative-policy.json` records the approved direction and the small-sample baseline. The renderer is pinned to HyperFrames 0.8.198, validated locally and by hosted production checks.
+
+Before a new Gemini script, the producer reads `/api/creative-feedback` from the configured Worker using its existing callback credential. The Worker fetches at most 20 recent videos and excludes posts younger than 72 hours or older than 30 days. Only allowlisted numeric metrics and course lesson IDs return; captions and Instagram tokens stay in the Worker. Lifetime totals at unequal ages remain descriptive. An unavailable API preserves the approved style and records unavailability without inventing metrics. Feedback is saved once per lesson and frozen across retries; a policy/prompt change invalidates its cached script. No automatic theme switches, topic winner claims, paid fallbacks or course reordering.
+
+For an already active queue, preview an update with `python -m automation.reschedule --start-date YYYY-MM-DD`, then apply with `--apply` only when authorized. This requires the full ordered 60-lesson queue, an unstarted remaining suffix and a future six-hour generation lead. One compare-guarded SQLite statement changes the remaining dates atomically. Published history and scheduler switches are verified afterward. Never re-import a running queue.

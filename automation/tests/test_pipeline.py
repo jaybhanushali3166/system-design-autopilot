@@ -14,12 +14,12 @@ class PipelineTests(unittest.TestCase):
   self.assertEqual(dt.datetime.fromtimestamp(rows[0]['generate_at'],dt.timezone.utc).isoformat(),'2026-10-14T23:30:00+00:00')
   for row in rows:
    local=dt.datetime.fromtimestamp(row['publish_at'],ZoneInfo('Asia/Kolkata'))
-   self.assertIn(local.weekday(),[1,3,5]);self.assertEqual((local.hour,local.minute),(11,0))
+   self.assertIn(local.weekday(),list(range(7)));self.assertEqual((local.hour,local.minute),(11,0))
   self.assertTrue(all(a['publish_at']<b['publish_at'] for a,b in zip(rows,rows[1:])))
  def test_next_valid_day_and_year_transition(self):
   rows=schedule(build_catalog(),config(),'2026-12-30')
-  self.assertEqual(dt.datetime.fromtimestamp(rows[0]['publish_at'],ZoneInfo('Asia/Kolkata')).date().isoformat(),'2026-12-31')
-  self.assertEqual(dt.datetime.fromtimestamp(rows[1]['publish_at'],ZoneInfo('Asia/Kolkata')).date().isoformat(),'2027-01-02')
+  self.assertEqual(dt.datetime.fromtimestamp(rows[0]['publish_at'],ZoneInfo('Asia/Kolkata')).date().isoformat(),'2026-12-30')
+  self.assertEqual(dt.datetime.fromtimestamp(rows[1]['publish_at'],ZoneInfo('Asia/Kolkata')).date().isoformat(),'2026-12-31')
  def test_reviewed_pilots_have_valid_content(self):
   for name in ['lesson-01','lesson-28']:
    data=json.loads((ROOT/'automation/lessons'/f'{name}.approved.json').read_text());validate(data)

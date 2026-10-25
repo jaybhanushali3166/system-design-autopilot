@@ -6,10 +6,11 @@ import requests
 from .common import ROOT,WORK,config,load_env,write_json
 from .catalog import build_catalog
 from .content import generate,digest,validate
+from .creative_feedback import fetch_feedback,policy
 from .gemini_http import GeminiRequestError
 from .voice import synthesize
 from .gemini_voice import identity as voice_identity
-from .render import build
+from .render import build,identity as render_identity
 from .validate import validate_video
 from .thumbnail import render_cover
 
@@ -50,11 +51,14 @@ def callback(url,data):
 
 def lesson_content(lesson, provider, project, resume):
  # A restored runner must use exactly the same script to reuse its scene audio.
- source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview')}
+ source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview'),
+         'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
  manifest=project/'content-source.json'
  if resume and (project/'content.json').exists() and manifest.exists() and json.loads(manifest.read_text())==source:
   return validate(json.loads((project/'content.json').read_text()))
- content=generate(lesson,provider)
+ feedback=fetch_feedback() if provider=='gemini' else {'status':'not_requested_approved_content'}
+ write_json(project/'creative-feedback.json',feedback)
+ content=generate(lesson,provider,feedback=feedback)
  write_json(project/'content.json',content);write_json(manifest,source)
  return content
 
@@ -72,7 +76,7 @@ def run(args):
  else:
   audio=synthesize(content,project,config()['voice'],provider=voice_profile['provider']);audio['narration_hash']=narration_hash;write_json(project/'audio.json',audio)
  build(lesson,content,audio,project)
- hash_value=digest({'content':content,'voice':audio['voice'],'voice_profile':voice_profile,'template':hashlib.sha256((ROOT/'automation/render.py').read_bytes()).hexdigest(),'renderer':config()['hyperframes_version']})
+ hash_value=digest({'content':content,'voice':audio['voice'],'voice_profile':voice_profile,'template':render_identity(),'renderer':config()['hyperframes_version']})
  hf(project,'check','--json',report=project/'check.json')
  check=json.loads((project/'check.json').read_text())
  if check.get('ok') is not True or check.get('browserSkipped'):raise ValueError('Browser validation failed or was skipped')
@@ -80,7 +84,7 @@ def run(args):
  if not args.resume or not (project/'reel.mp4').exists() or previous.get('content_hash')!=hash_value:
   hf(project,'render','--quality','delivery','--fps','30','--strict','--output','reel.mp4')
  validate=validate_video(project/'reel.mp4',audio['duration'],True)
- cover_metadata=render_cover(lesson,lessons,project)
+ cover_metadata=render_cover(lesson,lessons,project,content)
  # Evidence snapshots are extracted from the final encoded video, at each scene's proof pose.
  for scene in audio['scenes']:
   midpoint=scene['start']+scene['duration']*.65

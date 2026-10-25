@@ -4,9 +4,13 @@
   "repository": "jaybhanushali3166/system-design-autopilot",
   "timezone": "Asia/Kolkata",
   "weekdays": [
+    0,
     1,
+    2,
     3,
-    5
+    4,
+    5,
+    6
   ],
   "publish_time": "11:00",
   "start_date": null,
@@ -21,9 +25,13 @@
   "fps": 30,
   "width": 1080,
   "height": 1920,
-  "hyperframes_version": "0.8.156",
+  "hyperframes_version": "0.8.198",
   "voice_provider": "gemini",
   "voice_model": "gemini-3.8-flash-tts",
   "gemini_voice_interval_seconds": 65,
-  "alignment_model": "tiny.en"
+  "alignment_model": "tiny.en",
+  "video_theme": "light-workshop",
+  "cover_theme": "dark-series",
+  "creative_policy_version": "2026-10-25-v1",
+  "voice_style": "Warm conversational Varo teaching one colleague. Curious, playful and clear, with connected sentences and natural pauses at each new idea. Start immediately, with no announcer introduction. Medium pace around 160 words per minute. Read only the exact transcript; no headings or added words."
 }

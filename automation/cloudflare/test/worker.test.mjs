@@ -101,3 +101,7 @@ test('callback cooldown is bounded and cannot replace a stale claim',async()=>{
  assert.equal(res.status,409);
  assert.equal(env.db.prepare('SELECT next_retry_at FROM lessons').get().next_retry_at,retry);
 });
+
+test('creative feedback requires the producer credential',async()=>{
+ const env=environment();const res=await worker.fetch(new Request('https://example.workers.dev/api/creative-feedback'),env);assert.equal(res.status,401);
+});

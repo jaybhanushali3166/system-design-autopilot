@@ -1,0 +1,25 @@
+{
+  "version": "2026-10-25-v1",
+  "video_theme": "light-workshop",
+  "cover_theme": "dark-series",
+  "word_target": [
+    150,
+    185
+  ],
+  "principles": [
+    "Begin with a familiar concrete problem and a useful visual contrast immediately. No logo or terminology introduction.",
+    "Follow one worked example through one mechanism. Explain technical terms after their visible purpose.",
+    "Reveal a useful consequence in the opening teaching beat. Avoid reading a list.",
+    "One main idea per scene; a production caveat that actually explains the trade-off.",
+    "End with one practical reference, diagnostic checklist or reusable calculation.",
+    "Use natural connected English Varo narration and short captions. No invented benchmarks or company architecture.",
+    "Keep curriculum order and scope; use metrics as descriptive evidence, never a causal winner or a guarantee of reach."
+  ],
+  "baseline_snapshot": {
+    "date": "2026-10-25",
+    "reels": 12,
+    "median_per_reel_average_watch_seconds": 6.75,
+    "median_skip_rate_pct": 74.25,
+    "observation": "Lifetime at snapshot, unequal post ages. Small sample."
+  }
+}

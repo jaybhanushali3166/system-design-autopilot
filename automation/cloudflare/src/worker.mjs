@@ -1,3 +1,4 @@
+import {creativeFeedback} from './creative-feedback.mjs';
 const json = (data, status=200) => new Response(JSON.stringify(data), {status, headers:{'Content-Type':'application/json'}});
 export const late = (row, now) => now > row.publish_at + 1800;
 export function validLessonId(id) { return /^lesson-(0[1-9]|[1-5][0-9]|60)$/.test(id); }
@@ -161,6 +162,10 @@ async function fetchHandler(request,env) {
    await setting(env,'generation_enabled',true); await setting(env,'publishing_enabled',true);
    return json({active:true});
   }
+ }
+ if(path==='/api/creative-feedback'&&request.method==='GET') {
+  if(!await authorized(request,env.CALLBACK_TOKEN)) return json({error:'Unauthorized'},401);
+  return json(await creativeFeedback(env,meta,nowSeconds()));
  }
  if(path==='/api/result'&&request.method==='POST') {
   if(!await authorized(request,env.CALLBACK_TOKEN)) return json({error:'Unauthorized'},401);

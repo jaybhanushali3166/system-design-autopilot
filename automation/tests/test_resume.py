@@ -9,6 +9,11 @@ from automation.common import ROOT
 
 
 class ResumeTests(unittest.TestCase):
+    def setUp(self):
+        helper = patch("automation.produce.fetch_feedback", return_value={"status":"available","reels":[]})
+        self.feedback = helper.start()
+        self.addCleanup(helper.stop)
+
     @patch('automation.produce.generate')
     def test_restored_script_is_reused_and_changed_packet_invalidates_it(self, generate):
         content = json.loads((ROOT/'automation/lessons/lesson-01.approved.json').read_text())
@@ -19,6 +24,7 @@ class ResumeTests(unittest.TestCase):
             lesson_content(lesson, 'gemini', project, True)
             self.assertEqual(lesson_content(lesson, 'gemini', project, True), content)
             self.assertEqual(generate.call_count, 1)
+            self.assertEqual(self.feedback.call_count, 1)
             lesson_content({**lesson, 'title': 'Updated scope'}, 'gemini', project, True)
             self.assertEqual(generate.call_count, 2)
 
