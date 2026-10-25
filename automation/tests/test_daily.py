@@ -41,6 +41,15 @@ class ContinuousCaptionTests(unittest.TestCase):
   self.assertEqual(agreement,1);self.assertEqual(timeline[1]['start'],len(scenes[0]['narration'].split())*.4)
   self.assertTrue(all(1<=len(g['text'].split())<=5 for g in groups))
   self.assertEqual(' '.join(g['text'] for g in groups),text)
+ def test_technical_tokenization_preserves_measured_caption_boundaries(self):
+  scenes=[{'narration':'HTTP/2 carries requests. HTTP/3 uses QUIC streams.'}]
+  words=[{'word':w,'start':i*.5,'end':i*.5+.4} for i,w in enumerate('HTTP2 carries requests HTTP3 uses quick streams'.split())]
+  _,groups,agreement=align_continuous(scenes,words,5)
+  self.assertEqual(agreement,1);self.assertIn('HTTP/2',groups[0]['text'])
+ def test_missing_sentence_is_rejected_despite_high_global_agreement(self):
+  text=' '.join(['word']*50)+' Check the protocol in the browser network tab.'
+  words=[{'word':'word','start':i*.2,'end':i*.2+.1} for i in range(50)]
+  with self.assertRaises(ValueError):align_continuous([{'narration':text}],words,15)
  def test_bad_narration_or_nonmonotonic_times_cannot_make_captions(self):
   with self.assertRaises(ValueError):align_continuous([{'narration':'An actual script.'}],[{'word':'Different','start':0,'end':1}],3)
   with self.assertRaises(ValueError):align_continuous([{'narration':'One two.'}],[{'word':'One','start':1,'end':1.1},{'word':'two','start':.1,'end':.2}],3)

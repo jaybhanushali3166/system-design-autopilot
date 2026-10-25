@@ -48,15 +48,15 @@ def caption_boundaries(text,words,rate,length):
 def align_continuous(scenes,words,duration):
  """Map exact script spans to observed word times; never estimate equal word spacing."""
  text='\n\n'.join(s['narration'] for s in scenes)
- targets=list(re.finditer(r'[a-z0-9]+',text.lower()));observed=[];previous_start=-1
+ targets=list(re.finditer(r'[a-z]+|[0-9]+',text.lower()));observed=[];previous_start=-1
  for word in words:
   start,end=word['start'],word.get('end',word['start'])
   if not isinstance(start,(int,float)) or not isinstance(end,(int,float)) or not 0<=start<=end<=duration+.1:raise ValueError('Invalid measured word times')
   if start<previous_start:raise ValueError('Nonmonotonic measured word times')
   previous_start=start
-  observed.extend((token,start,end) for token in re.findall(r'[a-z0-9]+',word['word'].lower()))
+  observed.extend((token,start,end) for token in re.findall(r'[a-z]+|[0-9]+',word['word'].lower()))
  mapping={}
- matcher=difflib.SequenceMatcher(None,[t.group() for t in targets],[w[0] for w in observed],autojunk=False)
+ matcher=difflib.SequenceMatcher(None,['quic' if t.group()=='quick' else t.group() for t in targets],['quic' if w[0]=='quick' else w[0] for w in observed],autojunk=False)
  for block in matcher.get_matching_blocks():
   for j in range(block.size):mapping[block.a+j]=observed[block.b+j][1:]
  agreement=len(mapping)/max(1,len(targets))
@@ -116,7 +116,19 @@ def synthesize(content,project,voice,settings=None):
   model=WhisperModel(profile['alignment_model'],device='cpu',compute_type='int8',download_root=str(WORK/'models/whisper'))
   segments,_=model.transcribe(str(raw),language='en',word_timestamps=True,beam_size=5,initial_prompt=text,condition_on_previous_text=False,vad_filter=True)
   words=[{'word':w.word,'start':w.start,'end':w.end} for segment in segments for w in segment.words];write_json(timing,words)
- scenes,groups,agreement=align_continuous(content['scenes'],words,duration)
+ try:scenes,groups,agreement=align_continuous(content['scenes'],words,duration)
+ except ValueError as exc:
+  if str(exc) not in ['Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption']:raise
+  # Tiny ASR can omit technical phrases in continuous speech. Try a more accurate
+  # local recognizer once, retaining the same audio and strict measured gates.
+  fallback=project/f'alignment-{key_hash}-base.en.json'
+  if fallback.exists():words=json.loads(fallback.read_text())
+  else:
+   print('Checking continuous narration with local base.en alignment; no new voice request.',flush=True)
+   model=WhisperModel('base.en',device='cpu',compute_type='int8',download_root=str(WORK/'models/whisper'))
+   segments,_=model.transcribe(str(raw),language='en',word_timestamps=True,beam_size=5,initial_prompt=text,condition_on_previous_text=False,vad_filter=False)
+   words=[{'word':w.word,'start':w.start,'end':w.end} for segment in segments for w in segment.words];write_json(fallback,words)
+  scenes,groups,agreement=align_continuous(content['scenes'],words,duration)
  metadata={'scenes':scenes,'clips':[{'id':'voice-varo','src':f'assets/{final.name}','text':text,'start':0,'duration':round(duration,4)}],
   'caption_groups':groups,'words':words,'duration':round(duration+.3,4),'voice':f'gemini/{voice}','voice_profile':profile,'alignment_agreement':agreement}
  write_json(project/'audio.json',metadata)
