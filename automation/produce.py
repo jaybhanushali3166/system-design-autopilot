@@ -107,6 +107,8 @@ if __name__=='__main__':
  try:run(args)
  except Exception as exc:
   diagnostic=exc.diagnostic() if isinstance(exc,GeminiRequestError) else {'type':type(exc).__name__}
+  safe_audio_errors={'Invalid measured word times','Nonmonotonic measured word times','Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption','Scene text missing from continuous script','Nonmonotonic scene timings','Nonmonotonic caption timings','Continuous narration outside 45–105 second budget'}
+  if isinstance(exc,ValueError) and str(exc) in safe_audio_errors:diagnostic['reason']=str(exc)
   # Persist allowlisted evidence, never raw exceptions or credential-bearing URLs.
   if re.fullmatch(r'lesson-(0[1-9]|[1-5][0-9]|60)',args.lesson):
    write_json(WORK/'runs'/args.lesson/'generation-error.json',diagnostic)
