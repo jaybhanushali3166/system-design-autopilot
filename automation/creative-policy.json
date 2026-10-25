@@ -20,6 +20,20 @@
     "reels": 12,
     "median_per_reel_average_watch_seconds": 6.75,
     "median_skip_rate_pct": 74.25,
-    "observation": "Lifetime at snapshot, unequal post ages. Small sample."
+    "observation": "Lifetime at snapshot, unequal post ages. Small sample.",
+    "editorial_observations": [
+      {
+        "topic": "Storage and bandwidth estimates",
+        "saved": 7,
+        "reach": 270,
+        "hypothesis": "End on a useful calculation or diagnostic reference viewers can save."
+      },
+      {
+        "topic": "Familiar live-location app scenario",
+        "shares": 3,
+        "reach": 153,
+        "hypothesis": "Use familiar situations to explain an engineering mechanism without inventing company internals."
+      }
+    ]
   }
 }
