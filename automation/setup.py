@@ -147,7 +147,7 @@ def activate(first_date):
   admin('import','POST',rows)
  admin('activate','POST',{})
  settings=config();settings['start_date']=first_date;settings['publishing_enabled']=True;write_json(ROOT/'automation/config.json',settings)
- print('Cloud course activated: Tuesday, Thursday, Saturday at 11:00 AM IST. Generation starts six hours earlier.')
+ print('Cloud course activated: daily at 11:00 AM IST. Generation starts six hours earlier.')
 
 def main():
  parser=argparse.ArgumentParser();parser.add_argument('command',choices=['credentials','doctor','deploy','pilot','status','activate','pause','provision-github','runs'])

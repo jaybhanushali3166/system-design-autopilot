@@ -13,8 +13,11 @@ def identity():
              'automation/thumbnails/render.cjs','src/components/thumbnails/ReelThumbnail.tsx','src/utils/fonts.ts']
     return hashlib.sha256(b'\0'.join((ROOT / p).read_bytes() for p in paths)).hexdigest()
 
-def specification(lesson, lessons):
+def specification(lesson, lessons, content=None):
     title, diagram_title, nodes, note = json.loads((DIRECTORY / 'covers.json').read_text())[lesson['id']]
+    if content and content.get('cover_title'):
+        title = content['cover_title']
+        if not isinstance(title,str) or not 1 <= len(title) <= 32: raise ValueError('Invalid cover title')
     module = [row for row in lessons if row['series'] == lesson['series']]
     position = next(i + 1 for i, row in enumerate(module) if row['id'] == lesson['id'])
     return {'item': {'id':lesson['id'],'reelId':lesson['id'],
@@ -27,17 +30,17 @@ def specification(lesson, lessons):
         'diagram':{'title':diagram_title,'nodes':nodes,'note':note},
         'module':{'number':lesson['series'],'title':lesson['series_title'],'video':position,'total':len(module)}}
 
-def render_cover(lesson, lessons, project):
+def render_cover(lesson, lessons, project, content=None):
     project = Path(project)
     project.mkdir(parents=True, exist_ok=True)
-    spec = specification(lesson, lessons)
+    spec = specification(lesson, lessons, content)
     write_json(project / 'cover-input.json', [spec])
     subprocess.run(['node',str(DIRECTORY/'render.cjs'),'--input',str(project/'cover-input.json'),
                     '--output-dir',str(project),'--name','cover'], cwd=ROOT, check=True, timeout=300)
     cover = project / 'cover.jpg'
     if not cover.is_file() or not 10000 < cover.stat().st_size < 8 * 1024 * 1024:
         raise ValueError('Cover missing or outside image size budget')
-    metadata = {'template_hash':identity(),'module':spec['module'],'width':1080,'height':1920,'format':'jpeg'}
+    metadata = {'template_hash':identity(),'module':spec['module'],'width':1080,'height':1920,'format':'jpeg','theme':'dark-series'}
     write_json(project/'cover.json', metadata)
     return metadata
 

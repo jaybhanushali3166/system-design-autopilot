@@ -1,0 +1,1 @@
+The background track is a compressed local reuse of the existing original arcade-bed.wav from videos/claude-powerups. The soft pop is HyperFrames bundled SFX, resolved for the approved Lesson 06 draft. No new music synthesis or paid media service is used.

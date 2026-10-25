@@ -102,7 +102,7 @@ jobs:
           path: |
             .autopilot/models
             ~/.cache/puppeteer
-          key: reel-models-linux-varo-tiny-en-v1-hf-0.8.156
+          key: reel-models-linux-varo-tiny-en-v2-hf-0.8.198
       - name: Restore completed narration from prior attempts
         id: progress-cache
         uses: actions/cache/restore@v4
@@ -110,13 +110,14 @@ jobs:
           path: |
             .autopilot/runs/${{ inputs.lesson_id }}/content.json
             .autopilot/runs/${{ inputs.lesson_id }}/content-source.json
+            .autopilot/runs/${{ inputs.lesson_id }}/creative-feedback.json
             .autopilot/runs/${{ inputs.lesson_id }}/speech-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/audio.json
             .autopilot/runs/${{ inputs.lesson_id }}/assets
-          key: reel-progress-v1-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: reel-progress-v2-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/gemini_voice.py', 'automation/voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            reel-progress-v1-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-
+            reel-progress-v2-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/gemini_voice.py', 'automation/voice.py') }}-
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
           args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER" --resume)
@@ -132,6 +133,7 @@ jobs:
           path: |
             .autopilot/runs/${{ inputs.lesson_id }}/content.json
             .autopilot/runs/${{ inputs.lesson_id }}/content-source.json
+            .autopilot/runs/${{ inputs.lesson_id }}/creative-feedback.json
             .autopilot/runs/${{ inputs.lesson_id }}/speech-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/audio.json
@@ -154,5 +156,6 @@ jobs:
             .autopilot/runs/**/audio.json
             .autopilot/runs/**/captions.srt
             .autopilot/runs/**/generation-error.json
+            .autopilot/runs/**/creative-feedback.json
           retention-days: 7
           if-no-files-found: ignore
