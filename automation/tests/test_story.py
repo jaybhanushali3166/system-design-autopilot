@@ -1,6 +1,7 @@
 import copy,json,unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from automation.common import ROOT
 from automation.story_contract import validate_story
 from automation.creative_review import inspect_opening,check_story_language,CreativeReviewFailed
@@ -28,7 +29,8 @@ def story_content():
 class StoryTests(unittest.TestCase):
     def test_story_has_early_demonstration_and_advancing_beats(self):
         c=story_content();self.assertEqual(validate(c),c);self.assertEqual(validate_story(c)['opening']['result_at'],2.4)
-    def test_reviewed_next_lesson_routes_to_only_one_backend(self):
+    @patch("automation.render_story.shutil.copy2")
+    def test_reviewed_next_lesson_routes_to_only_one_backend(self,copy_asset):
         c=validate(json.loads((ROOT/'automation/lessons/lesson-08.approved.json').read_text()))
         audio={'scenes':[{**scene,'index':i,'start':i*7,'duration':7} for i,scene in enumerate(c['scenes'])],'duration':56,'caption_groups':[{'text':'No token: it stops.','start':0,'duration':2}], 'clips':[]}
         self.assertTrue(check_story_language(c,audio))
@@ -58,7 +60,8 @@ class StoryTests(unittest.TestCase):
         with self.assertRaises(CreativeReviewFailed):check_story_language(c,a)
         c=story_content();c['scenes'][2]['note']='A gateway always faster'
         with self.assertRaises(CreativeReviewFailed):check_story_language(c,a)
-    def test_renderer_produces_finite_connected_actions_and_no_dangling_branch(self):
+    @patch("automation.render_story.shutil.copy2")
+    def test_renderer_produces_finite_connected_actions_and_no_dangling_branch(self,copy_asset):
         c=story_content();audio={'scenes':[{**s,'index':i,'start':i*7,'duration':7} for i,s in enumerate(c['scenes'])],'duration':56,'caption_groups':[{'text':'One URL waits.','start':0,'duration':2}], 'clips':[]}
         with TemporaryDirectory() as folder:
             p=Path(folder);build_story({'title':'Request paths','series_title':'Request paths','number':8},c,audio,p)
