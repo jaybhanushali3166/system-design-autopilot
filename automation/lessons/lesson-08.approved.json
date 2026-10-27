@@ -1,0 +1,218 @@
+{
+  "caption": "Same URL, different outcome. Follow GET /orders through a configured front door: caller policy, routing, TLS termination and selection of a healthy backend. These are responsibilities that can overlap in one product.\n\nFor a failed call, inspect its route, the policy decision and the selected backend. Check TLS on each connection hop.\n\nSystem Design Crash Course · Lesson 08\n#systemdesign #webperformance #beyondlocalhost",
+  "cover_title": "Who Handles Your API Request?",
+  "story": {
+    "version": 2,
+    "example": "GET /orders",
+    "opening": {
+      "subject": "GET",
+      "before_label": "No token",
+      "after_label": "Valid token",
+      "before_reason": "Caller not authorized",
+      "after_reason": "Policy allows caller",
+      "before_result": "Rejected here",
+      "after_result": "Forwarded",
+      "before_action": "block",
+      "result_at": 2.4
+    },
+    "takeaway": [
+      "Trace the path and chosen backend",
+      "Inspect the token or policy result",
+      "Check TLS on each connection hop"
+    ]
+  },
+  "scenes": [
+    {
+      "title": "Same URL. Different outcome",
+      "narration": "No token: it stops. Valid token: it passes. Your front door checks who is calling.",
+      "action": "compare",
+      "nodes": [
+        {
+          "label": "No token",
+          "value": "Rejected",
+          "tone": "red"
+        },
+        {
+          "label": "Valid token",
+          "value": "Forwarded",
+          "tone": "green"
+        }
+      ],
+      "note": "A configured policy checks the same /orders request.",
+      "kind": "comparison"
+    },
+    {
+      "title": "First, check who is calling",
+      "narration": "In this configured example, an API gateway checks the token and rejects the missing-token call before the application.",
+      "action": "block",
+      "nodes": [
+        {
+          "label": "Caller",
+          "value": "Missing token",
+          "tone": "muted"
+        },
+        {
+          "label": "Gateway policy",
+          "value": "Reject this call",
+          "tone": "red"
+        },
+        {
+          "label": "Orders service",
+          "value": "Not reached",
+          "tone": "muted"
+        }
+      ],
+      "note": "The missing-token case stops before the application.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Send it to the right service",
+      "narration": "With a valid token, the reverse proxy forwards that same orders request to the internal orders service.",
+      "action": "route",
+      "nodes": [
+        {
+          "label": "Public client",
+          "value": "GET /orders",
+          "tone": "muted"
+        },
+        {
+          "label": "Reverse proxy",
+          "value": "Route /orders",
+          "tone": "cyan"
+        },
+        {
+          "label": "Orders service",
+          "value": "Request received",
+          "tone": "green"
+        }
+      ],
+      "note": "The configured route chooses the internal destination.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Where the secure hop ends",
+      "narration": "At TLS termination, the edge decrypts HTTPS traffic. Its connection to the backend needs a separate transport-security choice.",
+      "action": "route",
+      "nodes": [
+        {
+          "label": "Client",
+          "value": "HTTPS request",
+          "tone": "muted"
+        },
+        {
+          "label": "TLS endpoint",
+          "value": "Read HTTP here",
+          "tone": "cyan"
+        },
+        {
+          "label": "Backend",
+          "value": "Separate secure hop",
+          "tone": "green"
+        }
+      ],
+      "note": "This example uses TLS again on the backend hop.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Pick one healthy instance",
+      "narration": "A load balancer routes this orders request to one healthy instance, keeping the public endpoint the same for clients.",
+      "action": "select",
+      "nodes": [
+        {
+          "label": "Client",
+          "value": "GET /orders",
+          "tone": "muted"
+        },
+        {
+          "label": "Load balancer",
+          "value": "Choose one target",
+          "tone": "cyan"
+        },
+        {
+          "label": "Orders A",
+          "value": "Selected",
+          "tone": "green"
+        },
+        {
+          "label": "Orders B",
+          "value": "Also healthy",
+          "tone": "muted"
+        }
+      ],
+      "note": "One request goes to one selected backend, not every backend.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Leave the failed instance out",
+      "narration": "If another instance fails its health check, the balancer can exclude it. That does not repair the failed instance.",
+      "action": "select",
+      "nodes": [
+        {
+          "label": "Client",
+          "value": "GET /orders",
+          "tone": "muted"
+        },
+        {
+          "label": "Load balancer",
+          "value": "Exclude failed B",
+          "tone": "cyan"
+        },
+        {
+          "label": "Orders A",
+          "value": "Still healthy",
+          "tone": "green"
+        },
+        {
+          "label": "Orders B",
+          "value": "Health check failed",
+          "tone": "red"
+        }
+      ],
+      "note": "Health-based selection depends on the configured checks.",
+      "kind": "workflow"
+    },
+    {
+      "title": "One product can do several jobs",
+      "narration": "These are responsibilities, not three mandatory products. One configured proxy can handle routing, TLS, and gateway policies together.",
+      "action": "block",
+      "nodes": [
+        {
+          "label": "Caller",
+          "value": "Missing token",
+          "tone": "muted"
+        },
+        {
+          "label": "Configured proxy",
+          "value": "Policy rejects call",
+          "tone": "red"
+        },
+        {
+          "label": "Orders service",
+          "value": "Not reached",
+          "tone": "muted"
+        }
+      ],
+      "note": "The same proxy routes requests and rejects missing-token calls.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Trace your next failed call",
+      "narration": "For a failed call, trace its route, inspect the policy result, and confirm which healthy backend received it.",
+      "action": "checklist",
+      "nodes": [
+        {
+          "label": "Request trace",
+          "value": "One input",
+          "tone": "cyan"
+        },
+        {
+          "label": "Backend log",
+          "value": "One destination",
+          "tone": "green"
+        }
+      ],
+      "note": "Check the real path instead of guessing from product names.",
+      "kind": "workflow"
+    }
+  ]
+}

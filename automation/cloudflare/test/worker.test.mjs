@@ -13,7 +13,7 @@ function insert(env, state='PLANNED'){
  env.db.prepare('INSERT INTO lessons(id,course_id,ordinal,title,publish_at,generate_at,state,job_token,lease_until,container_id,caption) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run('lesson-01',env.COURSE_ID,1,'Requirements',now,now-21600,state,'current-token',now+100,'container-1','Teaching [SDCC:lesson-01]');
  return env.db.prepare('SELECT * FROM lessons').get();
 }
-const sample={lesson_id:'lesson-01',job_token:'current-token',video_url:'https://res.cloudinary.com/demo/video/upload/a.mp4',cover_url:'https://res.cloudinary.com/demo/image/upload/a.png',caption:'Example',content_hash:'a'.repeat(64),validation:{width:1080,height:1920,fps:30,audio:true,duration:75,check_passed:true,audio_peak_db:-2}};
+const sample={lesson_id:'lesson-01',job_token:'current-token',video_url:'https://res.cloudinary.com/demo/video/upload/a.mp4',cover_url:'https://res.cloudinary.com/demo/image/upload/a.png',caption:'Example',content_hash:'a'.repeat(64),validation:{width:1080,height:1920,fps:30,audio:true,duration:75,check_passed:true,audio_peak_db:-2,story_contract:2,opening_result_seconds:2.4,creative_review_passed:true,creative_review_sha256:"b".repeat(64),rendered_sha256:"c".repeat(64)}};
 const request=(payload,token='test-callback')=>new Request('https://example.workers.dev/api/result',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:JSON.stringify(payload)});
 test('inactive deployment never dispatches or publishes',async()=>{
  const env=environment();insert(env);const saved=globalThis.fetch;globalThis.fetch=()=>{throw new Error('Unexpected network');};
@@ -104,4 +104,8 @@ test('callback cooldown is bounded and cannot replace a stale claim',async()=>{
 
 test('creative feedback requires the producer credential',async()=>{
  const env=environment();const res=await worker.fetch(new Request('https://example.workers.dev/api/creative-feedback'),env);assert.equal(res.status,401);
+});
+
+test('technical validation cannot bypass the rendered story gate',()=>{
+ for(const change of [{creative_review_passed:false},{story_contract:1},{opening_result_seconds:23.3},{creative_review_sha256:null},{rendered_sha256:'invalid'}]) assert.throws(()=>validateResult({...sample,validation:{...sample.validation,...change}},'demo'));
 });

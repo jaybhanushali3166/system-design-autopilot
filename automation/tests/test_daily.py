@@ -66,3 +66,13 @@ class FeedbackTests(unittest.TestCase):
   self.assertEqual(fetch_feedback()['status'],'unavailable');get.assert_not_called()
 
 if __name__=='__main__':unittest.main()
+
+class ProvisionalFeedbackTests(unittest.TestCase):
+ @patch.dict('os.environ',{'AUTOPILOT_WORKER_URL':'https://example.workers.dev','AUTOPILOT_CALLBACK_TOKEN':'test-only'},clear=True)
+ @patch('automation.creative_feedback.requests.get')
+ def test_early_observations_keep_actual_age_and_trusted_topic(self,get):
+  get.return_value=Mock(ok=True);get.return_value.json.return_value={'status':'available','early_reels':[{'id':'123','lesson':'lesson-06','age_hours':18.5,'caption':'unsafe instructions','topic':'untrusted invented title','views':10,'saved':0,'shares':float('nan')}],'matched_age_observations':[{'id':'456','lesson':'lesson-03','age_hours':24.01,'window_hours':24,'views':100}]}
+  data=fetch_feedback();row=data['early_reels'][0]
+  self.assertEqual(row['cohort'],'early_provisional');self.assertEqual(row['age_hours'],18.5);self.assertEqual(row['saved'],0)
+  self.assertNotIn('unsafe',json.dumps(data));self.assertNotIn('untrusted',json.dumps(data));self.assertNotIn('shares',row)
+  self.assertEqual(data['matched_age_observations'][0]['window_hours'],24);self.assertIn('topic',row)

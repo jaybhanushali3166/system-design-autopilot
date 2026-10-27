@@ -1,13 +1,13 @@
 {
-  "version": "2026-10-25-v1",
+  "version": "2026-10-27-v2",
   "video_theme": "light-workshop",
   "cover_theme": "dark-series",
   "word_target": [
-    150,
-    185
+    145,
+    175
   ],
   "principles": [
-    "Begin with a familiar concrete problem and a useful visual contrast immediately. No logo or terminology introduction.",
+    "Demonstrate the consequence with the same input on two paths by 2.4 seconds; do not repeat the problem in beat two.",
     "Follow one worked example through one mechanism. Explain technical terms after their visible purpose.",
     "Reveal a useful consequence in the opening teaching beat. Avoid reading a list.",
     "One main idea per scene; a production caveat that actually explains the trade-off.",
@@ -35,5 +35,36 @@
         "hypothesis": "Use familiar situations to explain an engineering mechanism without inventing company internals."
       }
     ]
+  },
+  "story_contract": {
+    "version": 2,
+    "opening_result_seconds": 2.4,
+    "beats": 8,
+    "rendered_creative_review_required": true,
+    "same_example_throughout": true,
+    "takeaway_checks": 3
+  },
+  "approved_reference": {
+    "lesson": "lesson-06",
+    "retain": "Two visible states of the same input; an observable consequence within three seconds; one evolving physical example; useful closing checks.",
+    "transfer_form_only": "Keep the current curriculum topic. Do not repeat the reference episode or a successful older topic.",
+    "not_sufficient": "Palette, voice, readable cards and prompt instructions alone do not reproduce the approved story."
+  },
+  "review_2026_10_27": {
+    "lesson_06": {
+      "age_hours": 28.07,
+      "views": 1299,
+      "average_watch_seconds": 9.553,
+      "skip_rate_pct": 48.3,
+      "saved": 9
+    },
+    "lesson_07": {
+      "age_hours": 4.07,
+      "views": 150,
+      "average_watch_seconds": 3.881,
+      "skip_rate_pct": 78.5,
+      "saved": 0
+    },
+    "finding": "Unequal-age directional evidence, not causal proof. Lesson 07 delayed its first solution until 23.3 seconds and repeated setup."
   }
 }
