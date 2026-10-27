@@ -7,6 +7,8 @@ from .common import ROOT,WORK,config,load_env,write_json
 from .catalog import build_catalog
 from .content import generate,digest,validate
 from .creative_feedback import fetch_feedback,policy
+from .story_contract import validate_story
+from .creative_review import review_rendered,CreativeReviewFailed
 from .gemini_http import GeminiRequestError
 from .voice import synthesize
 from .gemini_voice import identity as voice_identity
@@ -53,26 +55,37 @@ def lesson_content(lesson, provider, project, resume):
  # A restored runner must use exactly the same script to reuse its scene audio.
  source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview'),
          'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
+ if provider=='approved':
+  approved=ROOT/'automation/lessons'/f'{lesson["id"]}.approved.json'
+  source['approved_hash']=hashlib.sha256(approved.read_bytes()).hexdigest() if approved.exists() else None
  manifest=project/'content-source.json'
  if resume and (project/'content.json').exists() and manifest.exists() and json.loads(manifest.read_text())==source:
   return validate(json.loads((project/'content.json').read_text()))
  feedback=fetch_feedback() if provider=='gemini' else {'status':'not_requested_approved_content'}
  write_json(project/'creative-feedback.json',feedback)
- content=generate(lesson,provider,feedback=feedback)
+ content=generate(lesson,provider,feedback=feedback,diagnostics=project/'script-attempts.json')
  write_json(project/'content.json',content);write_json(manifest,source)
  return content
+
+def refresh_scene_metadata(content,audio):
+ # Narration reuse must not freeze old titles, nodes, notes or action choices.
+ measured=audio['scenes']
+ if len(measured)!=len(content['scenes']) or any(old['narration']!=new['narration'] for old,new in zip(measured,content['scenes'])):raise ValueError('Cached narration does not match the current script')
+ return {**audio,'scenes':[{**new,**{k:old[k] for k in ['index','start','duration']}} for old,new in zip(measured,content['scenes'])]}
 
 def run(args):
  load_env();lessons=build_catalog();lesson=next((x for x in lessons if x['id']==args.lesson),None)
  if not lesson:raise ValueError('Unknown lesson ID')
  project=WORK/'runs'/lesson['id'];project.mkdir(parents=True,exist_ok=True)
  content=lesson_content(lesson,args.provider,project,args.resume)
+ validate_story(content)
  if args.prepare_only:
   print(f'Content prepared for {lesson["id"]}; no voice, upload or publication');return
  voice_profile=voice_identity(config())
  narration_hash=digest({'narration':[x['narration'] for x in content['scenes']],'voice_profile':voice_profile})
  old_audio=json.loads((project/'audio.json').read_text()) if (project/'audio.json').exists() else {}
- if args.resume and old_audio.get('narration_hash')==narration_hash:audio=old_audio
+ if args.resume and old_audio.get('narration_hash')==narration_hash:
+  audio=refresh_scene_metadata(content,old_audio);write_json(project/'audio.json',audio)
  else:
   audio=synthesize(content,project,config()['voice'],provider=voice_profile['provider']);audio['narration_hash']=narration_hash;write_json(project/'audio.json',audio)
  build(lesson,content,audio,project)
@@ -84,6 +97,8 @@ def run(args):
  if not args.resume or not (project/'reel.mp4').exists() or previous.get('content_hash')!=hash_value:
   hf(project,'render','--quality','delivery','--fps','30','--strict','--output','reel.mp4')
  validate=validate_video(project/'reel.mp4',audio['duration'],True)
+ creative=review_rendered(lesson,content,audio,project,hash_value)
+ validate.update(story_contract=2,opening_result_seconds=creative['opening_result_seconds'],creative_review_passed=creative['passed'],creative_review_sha256=hashlib.sha256((project/'creative-review.json').read_bytes()).hexdigest(),rendered_sha256=creative['rendered_sha256'])
  cover_metadata=render_cover(lesson,lessons,project,content)
  # Evidence snapshots are extracted from the final encoded video, at each scene's proof pose.
  for scene in audio['scenes']:
@@ -107,6 +122,7 @@ if __name__=='__main__':
  try:run(args)
  except Exception as exc:
   diagnostic=exc.diagnostic() if isinstance(exc,GeminiRequestError) else {'type':type(exc).__name__}
+  if isinstance(exc,CreativeReviewFailed):diagnostic['reason']='Local rendered-story gate rejected this candidate; inspect the review evidence'
   safe_audio_errors={'Invalid measured word times','Nonmonotonic measured word times','Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption','Scene text missing from continuous script','Nonmonotonic scene timings','Nonmonotonic caption timings','Continuous narration outside 45–105 second budget'}
   if isinstance(exc,ValueError) and str(exc) in safe_audio_errors:diagnostic['reason']=str(exc)
   # Persist allowlisted evidence, never raw exceptions or credential-bearing URLs.

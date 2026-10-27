@@ -50,7 +50,7 @@ on:
         type: boolean
         default: true
       provider:
-        description: Content provider (approved supports pilot lessons 01 and 28)
+        description: Content provider (approved requires a reviewed story v2 lesson file)
         type: choice
         options: [gemini, approved]
         default: gemini
@@ -115,9 +115,9 @@ jobs:
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/audio.json
             .autopilot/runs/${{ inputs.lesson_id }}/assets
-          key: reel-progress-v2-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/gemini_voice.py', 'automation/voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            reel-progress-v2-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/gemini_voice.py', 'automation/voice.py') }}-
+            reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
           args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER" --resume)
@@ -151,6 +151,12 @@ jobs:
             .autopilot/runs/**/cover.json
             .autopilot/runs/**/review-*.png
             .autopilot/runs/**/result.json
+            .autopilot/runs/**/script-attempts.json
+            .autopilot/runs/**/creative-review.json
+            .autopilot/runs/**/creative-frames/*.jpg
+            .autopilot/runs/**/story-evidence.json
+            .autopilot/runs/**/STORYBOARD.md
+            .autopilot/runs/**/SPEC.md
             .autopilot/runs/**/check.json
             .autopilot/runs/**/content.json
             .autopilot/runs/**/audio.json

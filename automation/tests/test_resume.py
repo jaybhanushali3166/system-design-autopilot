@@ -40,3 +40,14 @@ class ResumeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 lesson_content(lesson, 'gemini', project, True)
             self.assertEqual(generate.call_count, 1)
+
+
+class VisualResumeTests(unittest.TestCase):
+    def test_reused_voice_keeps_new_visual_metadata_and_measured_times(self):
+        from automation.produce import refresh_scene_metadata
+        current={'scenes':[{'narration':'The same words.','title':'New title','note':'New note','nodes':[],'action':'route'}]}
+        old={'scenes':[{'narration':'The same words.','title':'Old title','note':'Old note','index':0,'start':0,'duration':5}],'caption_groups':[{'text':'The same words.','start':0,'duration':5}]}
+        result=refresh_scene_metadata(current,old)
+        self.assertEqual(result['scenes'][0]['title'],'New title');self.assertEqual(result['scenes'][0]['note'],'New note');self.assertEqual(result['scenes'][0]['duration'],5);self.assertEqual(result['caption_groups'],old['caption_groups'])
+        current['scenes'][0]['narration']='Different words.'
+        with self.assertRaises(ValueError):refresh_scene_metadata(current,old)

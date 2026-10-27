@@ -1,28 +1,32 @@
-// Read-only, bounded Insights. Captions never leave the Worker; tokens never reach the runner.
-const METRICS='views,reach,likes,saved,shares,ig_reels_avg_watch_time,reels_skip_rate';
-export async function creativeFeedback(env,meta,now) {
- const base={captured_at:now,lookback_days:30,minimum_age_hours:72,returned_media:0,eligible_media:0,failed_media:0,reels:[]};
+import {INSIGHT_METRICS,numericMetrics} from './insight-observations.mjs';
+// Read-only Graph calls. Raw captions and tokens never leave the Worker.
+export async function creativeFeedback(env,meta,now){
+ const base={captured_at:now,lookback_days:30,minimum_age_hours:3,mature_minimum_age_hours:72,early_minimum_age_hours:3,returned_media:0,eligible_media:0,mature_media:0,early_media:0,failed_media:0,reels:[],early_reels:[],matched_age_observations:[]};
  let media;
- try {media=await meta(env,`${env.IG_USER_ID}/media`,'GET',{fields:'id,caption,timestamp,media_type',limit:'20'});}
- catch {return {status:'unavailable',...base};}
+ try{media=await meta(env,`${env.IG_USER_ID}/media`,'GET',{fields:'id,caption,timestamp,media_type',limit:'20'});}catch{return {status:'unavailable',...base};}
  base.returned_media=media.data?.length||0;
- const eligible=(media.data||[]).filter(m=>m.media_type==='VIDEO'&&/^\d+$/.test(m.id)&&Number.isFinite(Date.parse(m.timestamp))&&now-Date.parse(m.timestamp)/1000>=72*3600&&now-Date.parse(m.timestamp)/1000<=30*86400).slice(0,20);
+ const eligible=(media.data||[]).filter(m=>m.media_type==='VIDEO'&&/^\d+$/.test(m.id)&&Number.isFinite(Date.parse(m.timestamp))&&now-Date.parse(m.timestamp)/1000>=3*3600&&now-Date.parse(m.timestamp)/1000<=30*86400).slice(0,20);
  base.eligible_media=eligible.length;
- // Three requests at a time; at most 21 Graph subrequests in this handler.
- for(let i=0;i<eligible.length;i+=3) {
+ for(let i=0;i<eligible.length;i+=3){
   await Promise.all(eligible.slice(i,i+3).map(async m=>{
-   try {
-    const response=await meta(env,`${m.id}/insights`,'GET',{metric:METRICS});
-    const metrics={};for(const metric of response.data||[]) {const v=metric.values?.at(-1)?.value;if(typeof v==='number'&&Number.isFinite(v)&&v>=0)metrics[metric.name]=v;}
-    const row={id:m.id,age_hours:Math.round((now-Date.parse(m.timestamp)/1000)/36)/100};
+   try{
+    const metrics=numericMetrics(await meta(env,`${m.id}/insights`,'GET',{metric:INSIGHT_METRICS}));
+    if(!Object.keys(metrics).length){base.failed_media++;return;}
+    const age=(now-Date.parse(m.timestamp)/1000)/3600;const row={id:m.id,age_hours:Math.round(age*100)/100,...metrics};
     const marker=String(m.caption||'').match(/\[SDCC:(lesson-(?:0[1-9]|[1-5][0-9]|60))\]/);if(marker)row.lesson=marker[1];
-    for(const k of ['views','reach','likes','saved','shares'])if(metrics[k]!==undefined)row[k]=metrics[k];
-    if(metrics.ig_reels_avg_watch_time!==undefined)row.average_watch_seconds=metrics.ig_reels_avg_watch_time/1000;
-    if(metrics.reels_skip_rate!==undefined)row.skip_rate_pct=metrics.reels_skip_rate;
-    if(!Object.keys(metrics).length)base.failed_media++;else base.reels.push(row);
-   } catch {base.failed_media++;}
+    if(age<72){base.early_media++;base.early_reels.push({...row,cohort:'early_provisional'});}else{base.mature_media++;base.reels.push(row);}
+   }catch{base.failed_media++;}
   }));
  }
- base.reels.sort((a,b)=>a.id.localeCompare(b.id));
- return {status:base.failed_media?(base.reels.length?'partial':'unavailable'):'available',...base};
+ base.reels.sort((a,b)=>a.id.localeCompare(b.id));base.early_reels.sort((a,b)=>a.id.localeCompare(b.id));
+ if(env.DB){
+  try{
+   const all=[...base.reels,...base.early_reels];
+   if(all.length)await env.DB.batch(all.map(row=>env.DB.prepare('INSERT OR IGNORE INTO insight_snapshots VALUES(?,?,?,?,?,?,?)').bind(row.id,now,row.lesson||null,row.age_hours,row.age_hours<72?'early_provisional':'mature',null,JSON.stringify(Object.fromEntries(Object.entries(row).filter(([k])=>!['id','lesson','age_hours','cohort'].includes(k)))))));
+   const history=await env.DB.prepare('SELECT media_id,lesson_id,observed_at,age_hours,window_hours,metrics_json FROM insight_snapshots WHERE window_hours IS NOT NULL AND observed_at>=? ORDER BY observed_at DESC LIMIT 40').bind(now-30*86400).all();
+   base.matched_age_observations=history.results.map(r=>({id:r.media_id,...(r.lesson_id?{lesson:r.lesson_id}:{}),captured_at:r.observed_at,age_hours:r.age_hours,window_hours:r.window_hours,...JSON.parse(r.metrics_json)}));
+   base.history_status='available';
+  }catch{base.history_status='unavailable';}
+ }
+ return {status:base.failed_media?((base.reels.length+base.early_reels.length)?'partial':'unavailable'):'available',...base};
 }
