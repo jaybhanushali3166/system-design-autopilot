@@ -61,6 +61,14 @@ Voice/model/style identity participates in narration and media hashes, so a resu
 
 Speech responses and alignment data are cached per script and voice profile. The workflow restores the script and completed scenes from the most recent compatible attempt and saves progress even when production fails; retries use `--resume`. Cached progress excludes credentials, job tokens, and callback results. The small Whisper model is cached on the GitHub runner. Source deployment defaults remain paused; live dates and enabled state are held in Cloudflare D1 and are not changed by a voice update.
 
+### Interrupted script recovery
+
+With `--resume`, the producer saves the prompt identity, frozen Insights, draft and local validation result before requesting a correction. GitHub caches `script-progress.json` and `script-attempts.json` even when production fails. A retry resumes the saved draft's correction rather than requesting another initial draft. A validated checkpoint is revalidated and reused if the final content file was not written before interruption. Lesson, model, prompt, schema, policy or frozen-feedback changes invalidate incompatible checkpoints.
+
+The initial draft plus one completed correction is the total validation budget across runs; an invalid second response stops without further model calls. A failed HTTP request leaves the same pending correction available for retry. Script requests use at most three HTTP attempts per logical request to leave time within the hosted job limit. Narration remains one continuous, cached Varo performance.
+
+A provider's daily quota reset or long cooldown is saved in the script checkpoint. A resumed job before `retry_at` defers without contacting Gemini; it can continue after that time. This records when a retry is permitted, not a guarantee of provider capacity. Existing publication windows and ordered-release safeguards still apply; this change does not move dates, publish late or switch providers.
+
 ### Gemini quota handling
 
 Google measures limits per project and model across requests per minute, input tokens per minute, and requests per day. The actual account limits are shown in [AI Studio](https://aistudio.google.com/usage?timeRange=last-28-days&tab=rate-limit); they are not universal guarantees. Daily request quotas reset at midnight in `America/Los_Angeles`, including daylight-saving changes. See [Google's rate-limit guide](https://ai.google.dev/gemini-api/docs/rate-limits).

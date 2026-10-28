@@ -42,6 +42,35 @@ class ResumeTests(unittest.TestCase):
             self.assertEqual(generate.call_count, 1)
 
 
+    @patch('automation.produce.generate')
+    def test_failed_generation_keeps_feedback_and_provenance_for_resume(self, generate):
+        content=json.loads((ROOT/'automation/lessons/lesson-01.approved.json').read_text())
+        generate.side_effect=[RuntimeError('temporary generation failure'),content]
+        with TemporaryDirectory() as folder:
+            project=Path(folder);lesson={'id':'lesson-01'}
+            with self.assertRaises(RuntimeError):lesson_content(lesson,'gemini',project,True)
+            first=generate.call_args.kwargs['feedback']
+            self.assertTrue((project/'content-source.json').exists())
+            self.assertEqual(lesson_content(lesson,'gemini',project,True),content)
+            self.assertEqual(self.feedback.call_count,1)
+            self.assertEqual(generate.call_args.kwargs['feedback'],first)
+            self.assertTrue(generate.call_args.kwargs['resume'])
+
+    @patch('automation.produce.generate')
+    def test_failed_changed_packet_cannot_relabel_previous_content_as_current(self, generate):
+        content=json.loads((ROOT/'automation/lessons/lesson-01.approved.json').read_text())
+        generate.side_effect=[content,RuntimeError('generation failed'),content]
+        with TemporaryDirectory() as folder:
+            project=Path(folder);lesson={'id':'lesson-01','title':'Old scope'}
+            lesson_content(lesson,'gemini',project,True)
+            changed={**lesson,'title':'New scope'}
+            with self.assertRaises(RuntimeError):lesson_content(changed,'gemini',project,True)
+            self.assertFalse((project/'content.json').exists())
+            lesson_content(changed,'gemini',project,True)
+            self.assertEqual(generate.call_count,3)
+            self.assertEqual(self.feedback.call_count,2)
+
+
 class VisualResumeTests(unittest.TestCase):
     def test_reused_voice_keeps_new_visual_metadata_and_measured_times(self):
         from automation.produce import refresh_scene_metadata
