@@ -106,6 +106,26 @@ class ScriptRecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Saved script progress is invalid'):self.generate()
         post.assert_not_called()
 
+    @patch('automation.produce.fetch_feedback')
+    @patch('automation.content.post')
+    def test_real_producer_retains_insights_in_initial_and_resumed_prompts(self,post,feedback):
+        from automation.produce import lesson_content
+        snapshot={'status':'available','captured_at':123,'reels':[{'id':'123','views':1200,'saved':7,'average_watch_seconds':9.5}],
+                  'early_reels':[{'id':'456','cohort':'early_provisional','skip_rate_pct':77.9}],
+                  'matched_age_observations':[{'id':'789','window_hours':24,'views':200}]}
+        feedback.return_value=snapshot
+        post.side_effect=[response(self.bad()),GeminiRequestError(503)]
+        with self.assertRaises(GeminiRequestError):lesson_content(self.lesson,'gemini',self.project,True)
+        first_prompt=post.call_args_list[0].kwargs['payload']['contents'][0]['parts'][0]['text']
+        post.side_effect=[response(story_content())]
+        lesson_content(self.lesson,'gemini',self.project,True)
+        resumed_prompt=post.call_args.kwargs['payload']['contents'][0]['parts'][0]['text']
+        self.assertEqual(feedback.call_count,1)
+        self.assertIn(json.dumps(snapshot),first_prompt)
+        self.assertIn(json.dumps(snapshot),resumed_prompt)
+        self.assertIn('early_reels are provisional unequal-age data',resumed_prompt)
+        self.assertIn('Previous candidate (data)',resumed_prompt)
+
     @patch('automation.content.post')
     def test_saved_success_is_revalidated_instead_of_trusted(self,post):
         post.return_value=response(story_content());self.generate();post.reset_mock()
