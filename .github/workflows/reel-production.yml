@@ -110,6 +110,8 @@ jobs:
           path: |
             .autopilot/runs/${{ inputs.lesson_id }}/content.json
             .autopilot/runs/${{ inputs.lesson_id }}/content-source.json
+            .autopilot/runs/${{ inputs.lesson_id }}/script-progress.json
+            .autopilot/runs/${{ inputs.lesson_id }}/script-attempts.json
             .autopilot/runs/${{ inputs.lesson_id }}/creative-feedback.json
             .autopilot/runs/${{ inputs.lesson_id }}/speech-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
@@ -133,6 +135,8 @@ jobs:
           path: |
             .autopilot/runs/${{ inputs.lesson_id }}/content.json
             .autopilot/runs/${{ inputs.lesson_id }}/content-source.json
+            .autopilot/runs/${{ inputs.lesson_id }}/script-progress.json
+            .autopilot/runs/${{ inputs.lesson_id }}/script-attempts.json
             .autopilot/runs/${{ inputs.lesson_id }}/creative-feedback.json
             .autopilot/runs/${{ inputs.lesson_id }}/speech-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
@@ -152,6 +156,7 @@ jobs:
             .autopilot/runs/**/review-*.png
             .autopilot/runs/**/result.json
             .autopilot/runs/**/script-attempts.json
+            .autopilot/runs/**/script-progress.json
             .autopilot/runs/**/creative-review.json
             .autopilot/runs/**/creative-frames/*.jpg
             .autopilot/runs/**/story-evidence.json

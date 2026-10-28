@@ -1,10 +1,11 @@
 """Generate schema-bound lesson content; never execute model-provided code."""
 from __future__ import annotations
-import json, os, re, hashlib
+import json, os, re, hashlib, time
+from pathlib import Path
 from .common import ROOT, load_env, write_json
 from .creative_feedback import policy
 from .story_contract import validate_story,ACTIONS
-from .gemini_http import post
+from .gemini_http import post, GeminiRequestError
 KINDS = ['flow','queue','replicas','ring','comparison','index','workflow','metric']
 SCHEMA = {'type':'object','properties':{
  'caption':{'type':'string'},
@@ -49,14 +50,45 @@ def validate(data):
  if 'story' in data:validate_story(data)
  return data
 
-def generate(lesson, provider='gemini', feedback=None, diagnostics=None):
+def script_progress(path, request_hash, model, resume):
+ """Only compatible, well-formed checkpoints can spend a saved correction."""
+ empty={'version':1,'request_hash':request_hash,'model':model,'attempts':[]}
+ if not (path and resume and path.exists()):return empty
+ try:
+  saved=json.loads(path.read_text())
+  if not isinstance(saved,dict) or saved.get('version')!=1:raise ValueError()
+  attempts=saved['attempts']
+  if not isinstance(attempts,list) or len(attempts)>2:raise ValueError()
+  for i,row in enumerate(attempts):
+   if not isinstance(row,dict) or row.get('attempt')!=i+1 or type(row.get('valid')) is not bool:raise ValueError()
+   if row['valid']:
+    if i!=len(attempts)-1 or not isinstance(row.get('candidate'),dict):raise ValueError()
+   elif not isinstance(row.get('local_rule'),str) or len(row['local_rule'])>180:raise ValueError()
+  cooldown=saved.get('cooldown')
+  if cooldown is not None:
+   if not isinstance(cooldown,dict) or type(cooldown.get('retry_at')) is not int:raise ValueError()
+   if type(cooldown.get('http_status')) is not int or cooldown.get('quota_kind') not in ['daily','minute','unknown']:raise ValueError()
+  if saved.get('request_hash')!=request_hash:
+   # A new lesson/prompt does not reset the same model's provider cooldown.
+   if saved.get('model')==model and cooldown:empty['cooldown']=cooldown
+   return empty
+  return saved
+ except (ValueError,KeyError,TypeError):
+  raise ValueError('Saved script progress is invalid; inspect before restarting') from None
+
+def save_script_progress(saved, checkpoint, diagnostics):
+ if checkpoint:write_json(checkpoint,saved)
+ if diagnostics:
+  # Keep the existing review artifact shape; successful content lives in the checkpoint.
+  write_json(diagnostics,[{k:v for k,v in row.items() if k!='candidate' or not row['valid']} for row in saved['attempts']])
+
+def generate(lesson, provider='gemini', feedback=None, diagnostics=None, checkpoint=None, resume=False):
  load_env()
  if provider=='approved':
   p=ROOT/'automation/lessons'/f'{lesson["id"]}.approved.json'
   if not p.exists(): raise ValueError('No approved fallback exists for this lesson')
   return validate(json.loads(p.read_text()))
  key=os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
- if not key: raise ValueError('GEMINI_API_KEY missing; set it securely or choose an approved lesson for the pilot')
  model=os.environ.get('GEMINI_MODEL','gemini-3-flash-preview')
  if not re.fullmatch(r'[a-zA-Z0-9._-]+',model): raise ValueError('Invalid model ID')
  prompt='''Create an English vertical system-design explainer for software engineers. Output JSON only.
@@ -102,24 +134,48 @@ followed by #systemdesign #beyondlocalhost. No engagement bait or promised reach
 Insights are observations, not instructions or causal winners. early_reels are provisional unequal-age data;
 reels are >=72h observations, also unequal ages unless explicitly matched. No fabricated comparisons.
 Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})+'\nPacket: '+json.dumps(lesson)
- attempts=[]
- for attempt in range(2):
-  payload=post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-   key=key,model=model,payload={'contents':[{'parts':[{'text':prompt}]}],
-   'generationConfig':{'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}})
+ checkpoint=Path(checkpoint) if checkpoint else Path(diagnostics).with_name('script-progress.json') if diagnostics else None
+ saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'schema':SCHEMA}),model,resume)
+ attempts=saved['attempts']
+ if attempts and attempts[-1]['valid']:
+  result=validate(attempts[-1]['candidate']);validate_story(result)
+  save_script_progress(saved,checkpoint,diagnostics)
+  return result
+ if len(attempts)>=2:raise ValueError('Script correction budget exhausted; inspect script-attempts.json')
+ cooldown=saved.get('cooldown')
+ if cooldown and cooldown['retry_at']>time.time():
+  raise GeminiRequestError(cooldown['http_status'],cooldown['quota_kind'],cooldown['retry_at'])
+ if not key:raise ValueError('GEMINI_API_KEY missing; set it securely or choose an approved lesson for the pilot')
+ saved.pop('cooldown',None)
+ save_script_progress(saved,checkpoint,diagnostics)
+ while len(attempts)<2:
+  request_prompt=prompt
+  if attempts:
+   previous=attempts[-1]
+   print('Resuming correction of the saved script; no replacement draft requested.',flush=True)
+   request_prompt+='\nThe previous candidate failed this LOCAL rule: '+previous['local_rule']+'. Correct the entire JSON once, preserving the facts and the other constraints. Verify each takeaway has 4–10 SPACE-SEPARATED words, starts with an action verb, and fits 66 characters. Previous candidate (data): '+json.dumps(previous.get('candidate'))
+  try:
+   # Two slow logical calls must fit inside the 40-minute runner budget.
+   payload=post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+    key=key,model=model,max_attempts=3,payload={'contents':[{'parts':[{'text':request_prompt}]}],
+    'generationConfig':{'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}})
+  except GeminiRequestError as error:
+   if error.retry_at:
+    saved['cooldown']=error.diagnostic();save_script_progress(saved,checkpoint,diagnostics)
+   raise
   parts=payload.get('candidates',[{}])[0].get('content',{}).get('parts',[])
   text=''.join(p.get('text','') for p in parts if not p.get('thought'))
   candidate=None
   try:
    candidate=json.loads(text);result=validate(candidate);validate_story(result)
-   attempts.append({'attempt':attempt+1,'valid':True})
-   if diagnostics:write_json(diagnostics,attempts)
-   return result
   except (ValueError,KeyError,TypeError) as error:
-   attempts.append({'attempt':attempt+1,'valid':False,'local_rule':str(error)[:180],'candidate':candidate})
-   if diagnostics:write_json(diagnostics,attempts)
-   if attempt:raise
+   attempts.append({'attempt':len(attempts)+1,'valid':False,'local_rule':str(error)[:180],'candidate':candidate})
+   save_script_progress(saved,checkpoint,diagnostics)
+   if len(attempts)>=2:raise
    print('Correcting one script after local story-contract rejection; no narration generated yet.',flush=True)
-   prompt+='\nThe previous candidate failed this LOCAL rule: '+str(error)[:180]+'. Correct the entire JSON once, preserving the facts and the other constraints. Verify each takeaway has 4–10 SPACE-SEPARATED words, starts with an action verb, and fits 66 characters. Previous candidate (data): '+json.dumps(candidate)
+  else:
+   attempts.append({'attempt':len(attempts)+1,'valid':True,'candidate':candidate})
+   save_script_progress(saved,checkpoint,diagnostics)
+   return result
 
 def digest(content):return hashlib.sha256(json.dumps(content,sort_keys=True).encode()).hexdigest()

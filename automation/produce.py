@@ -59,12 +59,20 @@ def lesson_content(lesson, provider, project, resume):
   approved=ROOT/'automation/lessons'/f'{lesson["id"]}.approved.json'
   source['approved_hash']=hashlib.sha256(approved.read_bytes()).hexdigest() if approved.exists() else None
  manifest=project/'content-source.json'
- if resume and (project/'content.json').exists() and manifest.exists() and json.loads(manifest.read_text())==source:
+ compatible=resume and manifest.exists() and json.loads(manifest.read_text())==source
+ if compatible and (project/'content.json').exists():
   return validate(json.loads((project/'content.json').read_text()))
- feedback=fetch_feedback() if provider=='gemini' else {'status':'not_requested_approved_content'}
- write_json(project/'creative-feedback.json',feedback)
- content=generate(lesson,provider,feedback=feedback,diagnostics=project/'script-attempts.json')
- write_json(project/'content.json',content);write_json(manifest,source)
+ if not compatible:(project/'content.json').unlink(missing_ok=True)
+ feedback_path=project/'creative-feedback.json'
+ if compatible and feedback_path.exists():feedback=json.loads(feedback_path.read_text())
+ else:
+  feedback=fetch_feedback() if provider=='gemini' else {'status':'not_requested_approved_content'}
+  write_json(feedback_path,feedback)
+ # Freeze prompt provenance and feedback even if the first draft or correction fails.
+ write_json(manifest,source)
+ content=generate(lesson,provider,feedback=feedback,diagnostics=project/'script-attempts.json',
+                  checkpoint=project/'script-progress.json',resume=resume)
+ write_json(project/'content.json',content)
  return content
 
 def refresh_scene_metadata(content,audio):
