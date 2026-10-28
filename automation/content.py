@@ -82,6 +82,17 @@ def save_script_progress(saved, checkpoint, diagnostics):
   # Keep the existing review artifact shape; successful content lives in the checkpoint.
   write_json(diagnostics,[{k:v for k,v in row.items() if k!='candidate' or not row['valid']} for row in saved['attempts']])
 
+def script_generation_config(model):
+ # This legacy Gemini 3 model defaults to high thinking. Our non-streaming
+ # requests have a 120s read deadline; use the low-latency profile verified
+ # against the real lesson brief. Keep sampling at Google's default.
+ config={'responseMimeType':'application/json','responseJsonSchema':SCHEMA}
+ if model=='gemini-3-flash-preview':
+  config.update(thinkingConfig={'thinkingLevel':'low'},maxOutputTokens=8192)
+ else:
+  config['temperature']=0.3
+ return config
+
 def generate(lesson, provider='gemini', feedback=None, diagnostics=None, checkpoint=None, resume=False):
  load_env()
  if provider=='approved':
@@ -135,7 +146,8 @@ Insights are observations, not instructions or causal winners. early_reels are p
 reels are >=72h observations, also unequal ages unless explicitly matched. No fabricated comparisons.
 Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})+'\nPacket: '+json.dumps(lesson)
  checkpoint=Path(checkpoint) if checkpoint else Path(diagnostics).with_name('script-progress.json') if diagnostics else None
- saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'schema':SCHEMA}),model,resume)
+ generation_config=script_generation_config(model)
+ saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'generation_config':generation_config}),model,resume)
  attempts=saved['attempts']
  if attempts and attempts[-1]['valid']:
   result=validate(attempts[-1]['candidate']);validate_story(result)
@@ -158,7 +170,7 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
    # Two slow logical calls must fit inside the 40-minute runner budget.
    payload=post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
     key=key,model=model,max_attempts=3,payload={'contents':[{'parts':[{'text':request_prompt}]}],
-    'generationConfig':{'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}})
+    'generationConfig':generation_config})
   except GeminiRequestError as error:
    if error.retry_at:
     saved['cooldown']=error.diagnostic();save_script_progress(saved,checkpoint,diagnostics)

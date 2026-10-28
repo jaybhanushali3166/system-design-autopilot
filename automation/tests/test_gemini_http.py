@@ -89,6 +89,48 @@ class GeminiHttpTests(unittest.TestCase):
             self.call()
         self.assertEqual(post.call_count, 1)
 
+    @patch.object(api.requests, 'post')
+    def test_transport_diagnostics_identify_read_timeout_without_leaking_request(self, post):
+        def send(*args, **kwargs):
+            self.clock += 120
+            raise api.requests.exceptions.ReadTimeout('private URL with private-key')
+        post.side_effect = send
+        from contextlib import redirect_stdout
+        import io
+        logs = io.StringIO()
+        with redirect_stdout(logs), self.assertRaises(api.GeminiRequestError) as caught:
+            api.post('https://example.test', key='private-key', model='script', payload={}, max_attempts=3)
+        self.assertEqual(post.call_count, 3)
+        report = caught.exception.diagnostic()
+        self.assertEqual(report['transport_error'], 'read_timeout')
+        self.assertEqual(report['elapsed_seconds'], 120)
+        self.assertIn('transport=read_timeout', logs.getvalue())
+        self.assertNotIn('private', logs.getvalue() + str(report) + str(caught.exception))
+
+    @patch.object(api.requests, 'post')
+    def test_tls_configuration_failure_stops_without_repeating_request(self, post):
+        post.side_effect = api.requests.exceptions.SSLError('private certificate details')
+        with self.assertRaises(api.GeminiRequestError) as caught:
+            self.call()
+        self.assertEqual(post.call_count, 1)
+        self.assertEqual(caught.exception.diagnostic()['transport_error'], 'tls_error')
+        self.assertNotIn('private', str(caught.exception.diagnostic()))
+
+    @patch.object(api.requests, 'post')
+    def test_connect_timeout_is_distinct_from_read_timeout(self, post):
+        post.side_effect = api.requests.exceptions.ConnectTimeout('private')
+        with self.assertRaises(api.GeminiRequestError) as caught:
+            api.post('https://example.test', key='private-key', model='script', payload={}, max_attempts=1)
+        self.assertEqual(caught.exception.diagnostic()['transport_error'], 'connect_timeout')
+
+    @patch.object(api.requests, 'post')
+    def test_http_error_after_transport_failure_does_not_keep_stale_diagnostics(self, post):
+        post.side_effect = [api.requests.exceptions.ReadTimeout('private'), response(403)]
+        with self.assertRaises(api.GeminiRequestError) as caught:
+            self.call()
+        self.assertEqual(caught.exception.status, 403)
+        self.assertNotIn('transport_error', caught.exception.diagnostic())
+
     @patch.object(api.dt, 'datetime')
     def test_daily_reset_uses_pacific_day_including_dst(self, datetime):
         from zoneinfo import ZoneInfo

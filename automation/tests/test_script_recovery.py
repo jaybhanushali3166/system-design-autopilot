@@ -35,6 +35,30 @@ class ScriptRecoveryTests(unittest.TestCase):
         return content
 
     @patch('automation.content.post')
+    def test_production_flash_uses_bounded_low_thinking_and_default_sampling(self, post):
+        post.return_value=response(story_content())
+        with patch.dict('os.environ',{'GEMINI_MODEL':'gemini-3-flash-preview'}):self.generate()
+        config=post.call_args.kwargs['payload']['generationConfig']
+        self.assertEqual(config['thinkingConfig'],{'thinkingLevel':'low'})
+        self.assertEqual(config['maxOutputTokens'],8192)
+        self.assertNotIn('temperature',config)
+        self.assertIn('responseJsonSchema',config)
+
+    @patch('automation.content.post')
+    def test_generation_profile_change_invalidates_draft_but_keeps_daily_cooldown(self, post):
+        post.side_effect=[response(self.bad()),GeminiRequestError(429,'daily',2000)]
+        with self.assertRaises(GeminiRequestError):self.generate()
+        post.reset_mock()
+        from automation.content import script_generation_config
+        changed=script_generation_config('test-model');changed['maxOutputTokens']=8192
+        with patch('automation.content.script_generation_config',return_value=changed):
+            with self.assertRaises(GeminiRequestError):self.generate()
+            post.assert_not_called()
+            self.clock.return_value=2001;post.side_effect=[response(story_content())]
+            self.generate()
+        self.assertNotIn('Previous candidate (data)',post.call_args.kwargs['payload']['contents'][0]['parts'][0]['text'])
+
+    @patch('automation.content.post')
     def test_interrupted_correction_resumes_draft_and_frozen_budget(self,post):
         post.side_effect=[response(self.bad()),GeminiRequestError(503)]
         with self.assertRaises(GeminiRequestError):self.generate()
