@@ -1,0 +1,218 @@
+{
+  "caption": "One failed backend should change where NEW requests go. Follow GET /orders through a configured load-balancer pool: readiness checks, round-robin selection, failure thresholds and graceful draining. A health check does not guarantee that an already-running call is rescued or automatically retried.\n\nInspect readiness results, compare backend request counts, and test failure plus shutdown behavior.\n\nSystem Design Crash Course \u00b7 Lesson 09\n#systemdesign #beyondlocalhost",
+  "cover_title": "Who Gets Your Next Request?",
+  "story": {
+    "version": 2,
+    "example": "GET /orders",
+    "opening": {
+      "subject": "GET",
+      "before_label": "Failed target still used",
+      "after_label": "Healthy target selected",
+      "before_reason": "Request meets failed server",
+      "after_reason": "Health-aware pool selects A",
+      "before_result": "Call stops here",
+      "after_result": "Request reaches A",
+      "before_action": "block",
+      "result_at": 2.4
+    },
+    "takeaway": [
+      "Inspect readiness results and failure thresholds",
+      "Compare request counts across eligible backends",
+      "Test failover and in-flight request handling"
+    ]
+  },
+  "scenes": [
+    {
+      "title": "Which server gets this call?",
+      "narration": "This request stops at a failed server. A health-aware balancer sends it to a healthy one.",
+      "action": "compare",
+      "nodes": [
+        {
+          "label": "Failed target",
+          "value": "Call stops",
+          "tone": "red"
+        },
+        {
+          "label": "Healthy target",
+          "value": "Call arrives",
+          "tone": "green"
+        }
+      ],
+      "note": "A configured health-aware pool avoids this failed target.",
+      "kind": "comparison"
+    },
+    {
+      "title": "One address, several backends",
+      "narration": "Your orders request reaches one public entry point. The balancer forwards it to a backend from its eligible pool.",
+      "action": "route",
+      "nodes": [
+        {
+          "label": "Client",
+          "value": "GET /orders",
+          "tone": "muted"
+        },
+        {
+          "label": "Load balancer",
+          "value": "Choose a backend",
+          "tone": "cyan"
+        },
+        {
+          "label": "Orders A",
+          "value": "Request received",
+          "tone": "green"
+        }
+      ],
+      "note": "The same public address can front several backend instances.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Check before sending new work",
+      "narration": "An active check probes a configured readiness endpoint. A passing result marks that instance eligible for new requests.",
+      "action": "lookup",
+      "nodes": [
+        {
+          "label": "Health probe",
+          "value": "Check /ready",
+          "tone": "muted"
+        },
+        {
+          "label": "Orders A",
+          "value": "Passing response",
+          "tone": "cyan"
+        },
+        {
+          "label": "Pool state",
+          "value": "Eligible target",
+          "tone": "green"
+        }
+      ],
+      "note": "The check result records whether this target may receive new requests.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Take turns, not guesses",
+      "narration": "For this example, round-robin rotates new requests between eligible instances. It does not measure how busy each one is.",
+      "action": "select",
+      "nodes": [
+        {
+          "label": "Client",
+          "value": "GET /orders",
+          "tone": "muted"
+        },
+        {
+          "label": "Round-robin",
+          "value": "Select one target",
+          "tone": "cyan"
+        },
+        {
+          "label": "Orders A",
+          "value": "Selected now",
+          "tone": "green"
+        },
+        {
+          "label": "Orders B",
+          "value": "Also eligible",
+          "tone": "muted"
+        }
+      ],
+      "note": "One request reaches one selected backend, not both.",
+      "kind": "workflow"
+    },
+    {
+      "title": "A failed check changes the pool",
+      "narration": "After configured failure thresholds, a failing instance leaves the eligible pool. New orders requests go to the remaining healthy instance.",
+      "action": "select",
+      "nodes": [
+        {
+          "label": "Client",
+          "value": "GET /orders",
+          "tone": "muted"
+        },
+        {
+          "label": "Load balancer",
+          "value": "Exclude failed B",
+          "tone": "cyan"
+        },
+        {
+          "label": "Orders A",
+          "value": "Still healthy",
+          "tone": "green"
+        },
+        {
+          "label": "Orders B",
+          "value": "Check failed",
+          "tone": "red"
+        }
+      ],
+      "note": "Health checks guide selection after their configured thresholds.",
+      "kind": "workflow"
+    },
+    {
+      "title": "An old call can still fail",
+      "narration": "That does not rescue every in-flight request. A call already sent to a failing backend may still time out.",
+      "action": "block",
+      "nodes": [
+        {
+          "label": "Earlier call",
+          "value": "Already sent",
+          "tone": "muted"
+        },
+        {
+          "label": "Failing backend",
+          "value": "No response",
+          "tone": "red"
+        },
+        {
+          "label": "Client response",
+          "value": "Not received",
+          "tone": "muted"
+        }
+      ],
+      "note": "The old call stops here; any retry needs an explicit safe retry policy.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Let existing work finish",
+      "narration": "Mark the instance unready for new traffic, then allow existing orders requests to finish before shutting the instance down.",
+      "action": "route",
+      "nodes": [
+        {
+          "label": "Existing call",
+          "value": "Already accepted",
+          "tone": "muted"
+        },
+        {
+          "label": "Draining instance",
+          "value": "Finish this work",
+          "tone": "cyan"
+        },
+        {
+          "label": "Client response",
+          "value": "Call completed",
+          "tone": "green"
+        }
+      ],
+      "note": "Configured graceful shutdown gives existing work time to finish.",
+      "kind": "workflow"
+    },
+    {
+      "title": "Test it before the outage",
+      "narration": "Test a failed instance, inspect the readiness decision, and compare backend request counts before trusting your failover setup.",
+      "action": "checklist",
+      "nodes": [
+        {
+          "label": "Readiness",
+          "value": "Check results",
+          "tone": "cyan"
+        },
+        {
+          "label": "Request counts",
+          "value": "Compare backends",
+          "tone": "green"
+        }
+      ],
+      "note": "Inspect the real path and failure behavior, not just the diagram.",
+      "kind": "workflow"
+    }
+  ]
+}
