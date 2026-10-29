@@ -45,7 +45,8 @@ class ScriptRecoveryTests(unittest.TestCase):
         request=post.call_args.kwargs
         self.assertIn('Check routing',request['payload']['contents'][0]['parts'][0]['text'])
         self.assertIn('previous candidate failed',request['payload']['contents'][0]['parts'][0]['text'])
-        self.assertEqual(request['max_attempts'],3)
+        self.assertEqual(request['max_attempts'],2)
+        self.assertEqual(request['read_timeout'],240)
         self.assertEqual([a['valid'] for a in json.loads(self.diagnostics.read_text())],[False,True])
 
     @patch('automation.content.post')

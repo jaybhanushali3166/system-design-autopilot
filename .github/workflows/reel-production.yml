@@ -17,6 +17,9 @@ on:
       upload_media:
         default: true
         type: boolean
+      prepare_only:
+        default: false
+        type: boolean
       provider:
         default: approved
         type: string
@@ -49,6 +52,10 @@ on:
         description: Upload validated media to Cloudinary
         type: boolean
         default: true
+      prepare_only:
+        description: Validate a script only, without narration, render, upload or publication
+        type: boolean
+        default: false
       provider:
         description: Content provider (approved requires a reviewed story v2 lesson file)
         type: choice
@@ -77,6 +84,7 @@ jobs:
       DRY_RUN: ${{ inputs.dry_run }}
       UPLOAD_MEDIA: ${{ inputs.upload_media }}
       CONTENT_PROVIDER: ${{ inputs.provider || 'gemini' }}
+      PREPARE_ONLY: ${{ inputs.prepare_only || false }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -123,6 +131,7 @@ jobs:
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
           args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER" --resume)
+          if [ "$PREPARE_ONLY" = "true" ]; then args+=(--prepare-only); fi
           if [ "$UPLOAD_MEDIA" = "true" ]; then args+=(--upload); fi
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           if [ -n "$JOB_TOKEN" ]; then args+=(--job-token "$JOB_TOKEN"); fi

@@ -134,6 +134,10 @@ followed by #systemdesign #beyondlocalhost. No engagement bait or promised reach
 Insights are observations, not instructions or causal winners. early_reels are provisional unequal-age data;
 reels are >=72h observations, also unequal ages unless explicitly matched. No fabricated comparisons.
 Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})+'\nPacket: '+json.dumps(lesson)
+ generation_config={'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}
+ # The selected Gemini 3 Flash supports low-latency thinking; do not apply its enum to other models.
+ if model in ['gemini-3-flash-preview','gemini-3-flash']:
+  generation_config.update(temperature=1.0,thinkingConfig={'thinkingLevel':'minimal'},maxOutputTokens=8192)
  checkpoint=Path(checkpoint) if checkpoint else Path(diagnostics).with_name('script-progress.json') if diagnostics else None
  saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'schema':SCHEMA}),model,resume)
  attempts=saved['attempts']
@@ -155,10 +159,11 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
    print('Resuming correction of the saved script; no replacement draft requested.',flush=True)
    request_prompt+='\nThe previous candidate failed this LOCAL rule: '+previous['local_rule']+'. Correct the entire JSON once, preserving the facts and the other constraints. Verify each takeaway has 4–10 SPACE-SEPARATED words, starts with an action verb, and fits 66 characters. Previous candidate (data): '+json.dumps(previous.get('candidate'))
   try:
-   # Two slow logical calls must fit inside the 40-minute runner budget.
+   # Give a slow response time to complete instead of discarding it at 120s.
+   # Two attempts keep the worst-case text-call budget close to the old three attempts.
    payload=post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-    key=key,model=model,max_attempts=3,payload={'contents':[{'parts':[{'text':request_prompt}]}],
-    'generationConfig':{'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}})
+    key=key,model=model,max_attempts=2,read_timeout=240,payload={'contents':[{'parts':[{'text':request_prompt}]}],
+    'generationConfig':generation_config})
   except GeminiRequestError as error:
    if error.retry_at:
     saved['cooldown']=error.diagnostic();save_script_progress(saved,checkpoint,diagnostics)
