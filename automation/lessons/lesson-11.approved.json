@@ -1,0 +1,213 @@
+{
+  "caption": "Start database selection with the queries and guarantees your workload needs. Order ID lookups, customer-date ranges and related records can need different data shapes or indexes. SQL/NoSQL labels alone do not determine consistency or transaction support.\n\nTest representative reads and writes before choosing.\n#systemdesign #beyondlocalhost",
+  "cover_title": "Choose the query before the DB",
+  "story": {
+    "version": 2,
+    "example": "GET order 42",
+    "opening": {
+      "subject": "ORDER",
+      "before_label": "FULL SCAN",
+      "after_label": "MATCHING INDEX",
+      "before_reason": "Check candidate rows",
+      "after_reason": "Follow matching index",
+      "before_result": "STILL CHECKING ROWS",
+      "after_result": "ORDER FOUND",
+      "before_action": "wait",
+      "result_at": 2.4
+    },
+    "takeaway": [
+      "Compare exact query and range access patterns",
+      "Verify engine transaction and consistency guarantees",
+      "Test representative reads writes and operational costs"
+    ]
+  },
+  "scenes": [
+    {
+      "title": "Same order. Different search.",
+      "narration": "An indexed lookup finds order forty-two. A full scan checks rows until it finds a match.",
+      "action": "compare",
+      "note": "Illustrative query plans, not a benchmark.",
+      "kind": "comparison",
+      "nodes": [
+        {
+          "label": "FULL SCAN",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "INDEX LOOKUP",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Write the query first",
+      "narration": "Start with the actual query: fetch one order by identifier. Record its required freshness, traffic pattern, and failure tolerance.",
+      "action": "lookup",
+      "note": "Begin with query behavior and required guarantees.",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "ORDER ID",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "LOOKUP",
+          "value": "",
+          "tone": "green"
+        },
+        {
+          "label": "ORDER RECORD",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "One query is not enough",
+      "narration": "Next, list orders for one customer by date. That access pattern needs a different key or index than a single identifier.",
+      "action": "lookup",
+      "note": "Compare identifier lookups with customer-date queries.",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "CUSTOMER",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "DATE INDEX",
+          "value": "",
+          "tone": "green"
+        },
+        {
+          "label": "ORDER ROWS",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Relational fit",
+      "narration": "Relational storage can combine related rows and transaction rules. Choose it when those guarantees and flexible queries fit your order workload.",
+      "action": "lookup",
+      "note": "Check the actual engine and transaction requirements.",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "QUERY",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "RELATIONAL INDEX",
+          "value": "",
+          "tone": "green"
+        },
+        {
+          "label": "RELATED ROWS",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Key or document?",
+      "narration": "A key-value model fits direct key lookups. A document model can keep an order and its related details together for retrieval.",
+      "action": "lookup",
+      "note": "Document shape should match the required retrieval.",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "ORDER KEY",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "KEY LOOKUP",
+          "value": "",
+          "tone": "green"
+        },
+        {
+          "label": "ORDER DOCUMENT",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Design around access",
+      "narration": "A wide-column model groups rows around partition and clustering keys. Design those keys around the queries the order service actually needs.",
+      "action": "lookup",
+      "note": "Partition and clustering keys shape row access.",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "CUSTOMER KEY",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "PARTITION",
+          "value": "",
+          "tone": "green"
+        },
+        {
+          "label": "ORDER ROWS",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Check the price of an index",
+      "narration": "An index adds write and storage overhead. SQL and NoSQL labels alone do not specify transaction support or consistency guarantees.",
+      "action": "lookup",
+      "note": "Verify guarantees for the chosen engine and settings.",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "WRITE",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "INDEX UPDATE",
+          "value": "",
+          "tone": "green"
+        },
+        {
+          "label": "STORED ROW",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Test your real workload",
+      "narration": "Compare your queries, required guarantees, and operational burden. Test representative reads and writes before choosing the database behind order forty-two.",
+      "action": "checklist",
+      "note": "Evaluate access patterns, guarantees and operations.",
+      "kind": "workflow",
+      "nodes": [
+        {
+          "label": "QUERIES",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "GUARANTEES",
+          "value": "",
+          "tone": "green"
+        },
+        {
+          "label": "OPERATIONS",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    }
+  ]
+}

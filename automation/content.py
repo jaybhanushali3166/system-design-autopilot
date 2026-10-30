@@ -5,6 +5,7 @@ from pathlib import Path
 from .common import ROOT, load_env, write_json
 from .creative_feedback import policy
 from .story_contract import validate_story,ACTIONS
+from .creative_review import check_mechanism_language
 from .gemini_http import post, GeminiRequestError
 KINDS = ['flow','queue','replicas','ring','comparison','index','workflow','metric']
 SCHEMA = {'type':'object','properties':{
@@ -47,8 +48,29 @@ def validate(data):
    if set(n)!={'label','value','tone'} or n['tone'] not in ['cyan','green','red','muted']: raise ValueError('Invalid diagram node')
    if not isinstance(n['label'],str) or not isinstance(n['value'],str) or len(n['label'])>24 or len(n['value'])>36: raise ValueError('Diagram node text exceeds budget')
  if not 130<=words<=230: raise ValueError(f'Narration must be 130–230 words; got {words}')
- if 'story' in data:validate_story(data)
+ if 'story' in data:
+  validate_story(data)
+  check_mechanism_language(data)
  return data
+
+def correction_feedback(candidate,error):
+ # Give the model independent measurable constraints together, not one moving target.
+ rules=[str(error)]
+ if isinstance(candidate,dict) and isinstance(candidate.get('scenes'),list):
+  scenes=candidate['scenes']
+  words=sum(len(s.get('narration','').split()) for s in scenes if isinstance(s,dict) and isinstance(s.get('narration',''),str))
+  rules.append(f'Total narration is {words} words; keep 145–175 words, never below 130.')
+  for i,scene in enumerate(scenes):
+   if not isinstance(scene,dict):continue
+   action=scene.get('action');nodes=scene.get('nodes')
+   required=4 if action in ['fanout','select','replicate','cache-hit','cache-miss'] else 3
+   if action not in ['compare','checklist'] and isinstance(nodes,list) and len(nodes)!=required:
+    rules.append(f'Scene {i+1}: {action} requires exactly {required} nodes, got {len(nodes)}.')
+  checks=candidate.get('story',{}).get('takeaway',[]) if isinstance(candidate.get('story'),dict) else []
+  for i,line in enumerate(checks):
+   if isinstance(line,str) and (not 4<=len(line.split())<=10 or len(line)>66):rules.append(f'Takeaway {i+1}: use 4–10 words and at most 66 characters.')
+ return ' '.join(dict.fromkeys(rules))[:600]
+
 
 def script_progress(path, request_hash, model, resume):
  """Only compatible, well-formed checkpoints can spend a saved correction."""
@@ -63,7 +85,7 @@ def script_progress(path, request_hash, model, resume):
    if not isinstance(row,dict) or row.get('attempt')!=i+1 or type(row.get('valid')) is not bool:raise ValueError()
    if row['valid']:
     if i!=len(attempts)-1 or not isinstance(row.get('candidate'),dict):raise ValueError()
-   elif not isinstance(row.get('local_rule'),str) or len(row['local_rule'])>180:raise ValueError()
+   elif not isinstance(row.get('local_rule'),str) or len(row['local_rule'])>600:raise ValueError()
   cooldown=saved.get('cooldown')
   if cooldown is not None:
    if not isinstance(cooldown,dict) or type(cooldown.get('retry_at')) is not int:raise ValueError()
@@ -103,7 +125,7 @@ Build EIGHT short beats around ONE specific input (story.example, e.g. GET /orde
 The renderer lands the contrasting result at EXACTLY 2.4 seconds. Set story.opening.result_at=2.4.
 Name truthful case labels, physical reasons and DIFFERENT observable outcomes. Keep them <=30 characters; subject is a short physical packet label of at most SIX characters.
 A wait/block can represent a diagnostic contrast, not necessarily an inferior design; be technically scoped.
-Opening narration 8–18 words: name the concrete consequence now. No imagine, greetings, terminology lecture or delayed reveal.
+Opening narration 8–18 words: name the concrete consequence now using a concrete action such as waits, gets, serves, reaches, finishes or completes. No imagine, greetings, terminology lecture or delayed reveal.
 2: Advance the SAME example through the first useful action. Do NOT restate the problem.
 3–6: Add a single cause/effect per beat to the same evolving request path. Explain purpose, then name terms.
 7: Demonstrate one production boundary/trade-off with the example, not an empty warning.
@@ -134,6 +156,10 @@ followed by #systemdesign #beyondlocalhost. No engagement bait or promised reach
 Insights are observations, not instructions or causal winners. early_reels are provisional unequal-age data;
 reels are >=72h observations, also unequal ages unless explicitly matched. No fabricated comparisons.
 Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})+'\nPacket: '+json.dumps(lesson)
+ generation_config={'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}
+ # The selected Gemini 3 Flash supports low-latency thinking; do not apply its enum to other models.
+ if model in ['gemini-3-flash-preview','gemini-3-flash']:
+  generation_config.update(temperature=1.0,thinkingConfig={'thinkingLevel':'minimal'},maxOutputTokens=8192)
  checkpoint=Path(checkpoint) if checkpoint else Path(diagnostics).with_name('script-progress.json') if diagnostics else None
  saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'schema':SCHEMA}),model,resume)
  attempts=saved['attempts']
@@ -153,12 +179,13 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   if attempts:
    previous=attempts[-1]
    print('Resuming correction of the saved script; no replacement draft requested.',flush=True)
-   request_prompt+='\nThe previous candidate failed this LOCAL rule: '+previous['local_rule']+'. Correct the entire JSON once, preserving the facts and the other constraints. Verify each takeaway has 4–10 SPACE-SEPARATED words, starts with an action verb, and fits 66 characters. Previous candidate (data): '+json.dumps(previous.get('candidate'))
+   request_prompt+='\nThe previous candidate failed this LOCAL rule: '+previous['local_rule']+'. Correct the entire JSON once, preserving the facts and the other constraints. For an opening rejection, write a concrete present-tense consequence, e.g. The first image request waits on origin; the next gets a fresh edge copy. For a node-count rejection, match the selected action exactly. Remove invented performance numbers rather than adding a hypothetical disclaimer to an unsupported claim. Verify each takeaway has 4–10 SPACE-SEPARATED words, starts with an action verb, and fits 66 characters. Previous candidate (data): '+json.dumps(previous.get('candidate'))
   try:
-   # Two slow logical calls must fit inside the 40-minute runner budget.
+   # Give a slow response time to complete instead of discarding it at 120s.
+   # Two attempts keep the worst-case text-call budget close to the old three attempts.
    payload=post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-    key=key,model=model,max_attempts=3,payload={'contents':[{'parts':[{'text':request_prompt}]}],
-    'generationConfig':{'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}})
+    key=key,model=model,max_attempts=2,read_timeout=240,payload={'contents':[{'parts':[{'text':request_prompt}]}],
+    'generationConfig':generation_config})
   except GeminiRequestError as error:
    if error.retry_at:
     saved['cooldown']=error.diagnostic();save_script_progress(saved,checkpoint,diagnostics)
@@ -169,7 +196,7 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   try:
    candidate=json.loads(text);result=validate(candidate);validate_story(result)
   except (ValueError,KeyError,TypeError) as error:
-   attempts.append({'attempt':len(attempts)+1,'valid':False,'local_rule':str(error)[:180],'candidate':candidate})
+   attempts.append({'attempt':len(attempts)+1,'valid':False,'local_rule':correction_feedback(candidate,error),'candidate':candidate})
    save_script_progress(saved,checkpoint,diagnostics)
    if len(attempts)>=2:raise
    print('Correcting one script after local story-contract rejection; no narration generated yet.',flush=True)

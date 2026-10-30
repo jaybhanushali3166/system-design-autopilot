@@ -1,0 +1,223 @@
+{
+  "caption": "A nearby edge can serve a fresh cached image without another origin fetch. Follow /shoe.jpg through a miss, a fill, a hit and an expiry. Cache behavior depends on the key, freshness and response rules. Keep personal responses out of shared caches.\n\nInspect cache status and Cache-Control before comparing timings.\n#systemdesign #beyondlocalhost",
+  "cover_title": "Why fetch the same image twice?",
+  "story": {
+    "version": 2,
+    "example": "GET /shoe.jpg",
+    "opening": {
+      "subject": "IMAGE",
+      "before_label": "CACHE MISS",
+      "after_label": "FRESH CACHE HIT",
+      "before_reason": "Fetch from origin",
+      "after_reason": "Serve stored copy",
+      "before_result": "WAITING ON ORIGIN",
+      "after_result": "IMAGE ARRIVED",
+      "before_action": "wait",
+      "result_at": 2.4
+    },
+    "takeaway": [
+      "Inspect cache status on the image response",
+      "Compare Cache-Control and cache key rules",
+      "Test changed content and personal response handling"
+    ]
+  },
+  "scenes": [
+    {
+      "title": "Same image. Different journey.",
+      "narration": "The first image request waits on the origin. The next gets a fresh copy from the edge.",
+      "action": "compare",
+      "note": "A fresh eligible cache hit avoids another origin fetch.",
+      "kind": "comparison",
+      "nodes": [
+        {
+          "label": "BROWSER",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "EDGE",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "A stop near the viewer",
+      "narration": "You open a product page and request shoe dot JPEG. A nearby CDN edge checks for a matching cached response.",
+      "action": "route",
+      "note": "One public image request, followed through one edge.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "BROWSER",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "EDGE",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "LOOKUP",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "The shelf is empty",
+      "narration": "On this cache miss, the edge asks the origin for the image. The origin returns the public, cacheable response.",
+      "action": "cache-miss",
+      "note": "MISS: the edge must fetch the image from origin.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "BROWSER",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "EDGE",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "ORIGIN",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "IMAGE",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Keep a permitted copy",
+      "narration": "The edge stores that response when its cache rules allow it. The cache key and freshness rules determine later reuse.",
+      "action": "lookup",
+      "note": "Storage and reuse depend on configuration.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "KEY",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "CACHE RULES",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "COPY",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Same key. Fresh copy.",
+      "narration": "A later request matches the same key while the copy is fresh. The edge serves it without another origin fetch.",
+      "action": "cache-hit",
+      "note": "HIT: a fresh copy can satisfy this request.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "BROWSER",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "EDGE",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "ORIGIN",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "IMAGE",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Freshness has a boundary",
+      "narration": "When the copy expires, the edge may revalidate or fetch again. Purging a changed image also needs deliberate configuration.",
+      "action": "route",
+      "note": "An old copy is not an unlimited promise of freshness.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "EDGE",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "ORIGIN",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "IMAGE",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Personal data stays personal",
+      "narration": "Your account response is different. Shared caching must respect private and no-store directives so personal data is not reused across users.",
+      "action": "block",
+      "note": "Honor response rules; do not force-cache personal pages.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "ACCOUNT",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "CACHE RULES",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "SHARED CACHE",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    },
+    {
+      "title": "Read the evidence",
+      "narration": "Inspect cache status, compare response headers, and test a changed image. A nearby server helps only when the cache rules fit.",
+      "action": "checklist",
+      "note": "Check the actual response, not a promised speedup.",
+      "kind": "workflow",
+      "nodes": [
+        {
+          "label": "STATUS",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "HEADERS",
+          "value": "",
+          "tone": "cyan"
+        },
+        {
+          "label": "CHANGED IMAGE",
+          "value": "",
+          "tone": "green"
+        }
+      ]
+    }
+  ]
+}

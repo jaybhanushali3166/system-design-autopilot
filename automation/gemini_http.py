@@ -18,16 +18,19 @@ _next_request = {}
 
 
 class GeminiRequestError(RuntimeError):
-    def __init__(self, status, quota_kind='unknown', retry_at=None):
+    def __init__(self, status, quota_kind='unknown', retry_at=None, transport_error=None):
         self.status = status
         self.quota_kind = quota_kind
         self.retry_at = retry_at
+        self.transport_error = transport_error
         # Never include raw provider messages, request headers or URLs.
         super().__init__(f'Gemini request failed (HTTP {status}; quota={quota_kind})')
 
     def diagnostic(self):
-        return {'provider': 'gemini', 'http_status': self.status,
-                'quota_kind': self.quota_kind, 'retry_at': self.retry_at}
+        result = {'provider': 'gemini', 'http_status': self.status,
+                  'quota_kind': self.quota_kind, 'retry_at': self.retry_at}
+        if self.transport_error: result['transport_error'] = self.transport_error
+        return result
 
 
 def quota_details(response):
@@ -79,13 +82,15 @@ def next_daily_reset():
     return int(dt.datetime.combine(tomorrow, dt.time(), now.tzinfo).timestamp()) + 60
 
 
-def post(url, *, key, model, payload, interval_seconds=65, max_attempts=5):
+def post(url, *, key, model, payload, interval_seconds=65, max_attempts=5, read_timeout=120):
     """One request/minute by default, including retries, within this producer.
 
 The workflow serializes all producer jobs. Other users of the same Google
 project still share its quotas; the interval is a conservative policy, not a
 claim about the account's actual limit.
     """
+    if isinstance(read_timeout, bool) or not isinstance(read_timeout, (int, float)) or not math.isfinite(read_timeout) or not 1 <= read_timeout <= 300:
+        raise ValueError("Gemini read timeout must be 1–300 seconds")
     interval_seconds = float(interval_seconds)
     if not math.isfinite(interval_seconds) or interval_seconds < 1:
         raise ValueError('Gemini request interval must be a positive finite number')
@@ -95,11 +100,18 @@ claim about the account's actual limit.
             print(f'Pacing Gemini {model}: waiting {math.ceil(wait)} seconds.', flush=True)
             time.sleep(wait)
         _next_request[model] = time.monotonic() + interval_seconds
+        transport_error = None
         try:
             response = requests.post(url, headers={'x-goog-api-key': key},
-                                     json=payload, timeout=(10, 120))
+                                     json=payload, timeout=(10, read_timeout))
+        except requests.ReadTimeout:
+            response = None; transport_error = "read_timeout"
+        except requests.ConnectTimeout:
+            response = None; transport_error = "connect_timeout"
+        except requests.ConnectionError:
+            response = None; transport_error = "connection_error"
         except requests.RequestException:
-            response = None
+            response = None; transport_error = "request_error"
         if response is not None and response.status_code == 200:
             return response.json()
         status = response.status_code if response is not None else 0
@@ -107,7 +119,7 @@ claim about the account's actual limit.
         if status == 429 and kind == 'daily':
             raise GeminiRequestError(status, kind, max(next_daily_reset(), int(time.time() + hint)))
         if status not in (0, 408, 429, 500, 502, 503, 504) or attempt == max_attempts - 1:
-            raise GeminiRequestError(status, kind)
+            raise GeminiRequestError(status, kind, transport_error=transport_error)
         delay = max(hint, min(300, interval_seconds * 2 ** attempt)) + random.uniform(1, 5)
         # Long provider cooldowns should defer the job, not consume a runner.
         if delay > 600:

@@ -51,10 +51,21 @@ def callback(url,data):
    if attempt==2:raise RuntimeError('Worker callback failed; inspect the cloud run') from None
   time.sleep(2**attempt)
 
+def reviewed_script_fallback(lesson):
+ # A fallback is opt-in per lesson and bound to reviewed bytes, never a random old topic.
+ expected=config().get('reviewed_script_fallbacks',{}).get(lesson['id'])
+ if not expected:return None
+ path=ROOT/'automation/lessons'/f"{lesson['id']}.approved.json"
+ if not path.exists() or hashlib.sha256(path.read_bytes()).hexdigest()!=expected:
+  raise ValueError('Reviewed script fallback is missing or changed')
+ content=validate(json.loads(path.read_text()));validate_story(content)
+ return content
+
+
 def lesson_content(lesson, provider, project, resume):
  # A restored runner must use exactly the same script to reuse its scene audio.
  source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview'),
-         'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
+         'reviewed_fallback_hash':config().get('reviewed_script_fallbacks',{}).get(lesson['id']),'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
  if provider=='approved':
   approved=ROOT/'automation/lessons'/f'{lesson["id"]}.approved.json'
   source['approved_hash']=hashlib.sha256(approved.read_bytes()).hexdigest() if approved.exists() else None
@@ -70,8 +81,14 @@ def lesson_content(lesson, provider, project, resume):
   write_json(feedback_path,feedback)
  # Freeze prompt provenance and feedback even if the first draft or correction fails.
  write_json(manifest,source)
- content=generate(lesson,provider,feedback=feedback,diagnostics=project/'script-attempts.json',
-                  checkpoint=project/'script-progress.json',resume=resume)
+ try:
+  content=generate(lesson,provider,feedback=feedback,diagnostics=project/'script-attempts.json',
+                   checkpoint=project/'script-progress.json',resume=resume)
+ except (GeminiRequestError,ValueError):
+  if provider!='gemini':raise
+  content=reviewed_script_fallback(lesson)
+  if content is None:raise
+  write_json(project/'script-fallback.json',{'lesson':lesson['id'],'source':'reviewed_hash_pinned_script','used':True})
  write_json(project/'content.json',content)
  return content
 
@@ -81,7 +98,11 @@ def refresh_scene_metadata(content,audio):
  if len(measured)!=len(content['scenes']) or any(old['narration']!=new['narration'] for old,new in zip(measured,content['scenes'])):raise ValueError('Cached narration does not match the current script')
  return {**audio,'scenes':[{**new,**{k:old[k] for k in ['index','start','duration']}} for old,new in zip(measured,content['scenes'])]}
 
+CURRENT_STAGE='initialization'
+
 def run(args):
+ global CURRENT_STAGE
+ CURRENT_STAGE='script'
  load_env();lessons=build_catalog();lesson=next((x for x in lessons if x['id']==args.lesson),None)
  if not lesson:raise ValueError('Unknown lesson ID')
  project=WORK/'runs'/lesson['id'];project.mkdir(parents=True,exist_ok=True)
@@ -89,6 +110,7 @@ def run(args):
  validate_story(content)
  if args.prepare_only:
   print(f'Content prepared for {lesson["id"]}; no voice, upload or publication');return
+ CURRENT_STAGE='voice'
  voice_profile=voice_identity(config())
  narration_hash=digest({'narration':[x['narration'] for x in content['scenes']],'voice_profile':voice_profile})
  old_audio=json.loads((project/'audio.json').read_text()) if (project/'audio.json').exists() else {}
@@ -96,6 +118,7 @@ def run(args):
   audio=refresh_scene_metadata(content,old_audio);write_json(project/'audio.json',audio)
  else:
   audio=synthesize(content,project,config()['voice'],provider=voice_profile['provider']);audio['narration_hash']=narration_hash;write_json(project/'audio.json',audio)
+ CURRENT_STAGE='render'
  build(lesson,content,audio,project)
  hash_value=digest({'content':content,'voice':audio['voice'],'voice_profile':voice_profile,'template':render_identity(),'renderer':config()['hyperframes_version']})
  hf(project,'check','--json',report=project/'check.json')
@@ -104,6 +127,7 @@ def run(args):
  previous=json.loads((project/'result.json').read_text()) if (project/'result.json').exists() else {}
  if not args.resume or not (project/'reel.mp4').exists() or previous.get('content_hash')!=hash_value:
   hf(project,'render','--quality','delivery','--fps','30','--strict','--output','reel.mp4')
+ CURRENT_STAGE='validation'
  validate=validate_video(project/'reel.mp4',audio['duration'],True)
  creative=review_rendered(lesson,content,audio,project,hash_value)
  validate.update(story_contract=2,opening_result_seconds=creative['opening_result_seconds'],creative_review_passed=creative['passed'],creative_review_sha256=hashlib.sha256((project/'creative-review.json').read_bytes()).hexdigest(),rendered_sha256=creative['rendered_sha256'])
@@ -117,6 +141,7 @@ def run(args):
          'run_id':os.environ.get('GITHUB_RUN_ID','local'),'video_url':None,'cover_url':None}
  write_json(project/'result.json',result)
  if args.upload:
+  CURRENT_STAGE='upload'
   result['video_url'],result['cover_url']=upload(project,lesson,hash_value);write_json(project/'result.json',result)
  if args.worker_url:
   if not args.upload:raise ValueError('Callback requires uploaded media')
@@ -130,6 +155,7 @@ if __name__=='__main__':
  try:run(args)
  except Exception as exc:
   diagnostic=exc.diagnostic() if isinstance(exc,GeminiRequestError) else {'type':type(exc).__name__}
+  diagnostic['stage']=CURRENT_STAGE
   if isinstance(exc,CreativeReviewFailed):diagnostic['reason']='Local rendered-story gate rejected this candidate; inspect the review evidence'
   safe_audio_errors={'Invalid measured word times','Nonmonotonic measured word times','Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption','Scene text missing from continuous script','Nonmonotonic scene timings','Nonmonotonic caption timings','Continuous narration outside 45–105 second budget'}
   if isinstance(exc,ValueError) and str(exc) in safe_audio_errors:diagnostic['reason']=str(exc)

@@ -170,3 +170,20 @@ Rendered frames stay on the runner and in the existing GitHub review artifact. N
 Insights now have two separate channels: `early_reels` (3–72 hours, explicitly provisional) and `reels` (72 hours–30 days). Neither makes unequal-age totals comparable. Course topics are annotated from the trusted local catalog, not raw captions. The Worker records actual snapshot age/time. Its existing minute cron independently claims 24-hour, 72-hour and seven-day observations for published course reels, within 15 minutes of the target. Collection failures back off and never alter publishing state. Missed windows are not reconstructed from later lifetime values. `matched_age_observations` exposes only real recorded windows.
 
 Deploy migration `0002_insight_observations.sql` before the Worker update. It adds observation tables without rewriting lessons, published history, dates, switches or credentials. Keep the producer and Worker story-gate versions together; the old approved pilot JSON remains a historical fixture and is not accepted by the v2 renderer.
+
+
+## Script request latency — 29 October 2026
+
+Gemini 3 Flash script calls explicitly use minimal thinking and the vendor-recommended temperature 1.0. The change is limited to the supported `gemini-3-flash-preview` and `gemini-3-flash` models. Other model IDs retain their prior configuration, and Varo narration is unchanged. See https://ai.google.dev/gemini-api/docs/generate-content/gemini-3 for latency controls.
+
+A script request has a 240-second read timeout with two transport attempts instead of discarding a slow response at 120 seconds up to three times. Quota-aware backoff, saved correction budgets and credential-safe error handling remain in force. Diagnostics now distinguish read/connect timeouts from other connection failures without logging raw exception text. Neither this change nor a fresh API key guarantees provider availability or quota.
+
+The existing production workflow accepts `prepare_only: true` for a script-only preflight. It exits before speech, rendering, upload and callback, and retains the draft and progress in the usual cache/artifact for inspection. Use it to verify a future lesson without creating another video or modifying its publishing state.
+
+### Reviewed script fallback and stage diagnostics
+
+`generation-error.json` now identifies `script`, `voice`, `render`, `validation`, or `upload` so script quota failures cannot be mistaken for voice rate limits. Script requests use bounded transport retries; daily quota deferral remains preserved.
+
+A fallback is disabled unless `automation/config.json` explicitly maps a lesson ID to the SHA256 of its reviewed `automation/lessons/lesson-NN.approved.json` bytes under `reviewed_script_fallbacks`. A Gemini script request or validation failure may use only that exact lesson file, after schema and story validation. Missing/changed files fail closed. `script-fallback.json` records use; no fallback publishes directly, bypasses rendering checks, substitutes another lesson, or changes the schedule. Voice remains Varo. New fallback scripts still need editorial review before enabling their hashes.
+
+The current reviewed buffer enables hash-pinned fallbacks only for lessons 10 and 11. Their companion review files list sources and caveats. This protects those script stages from provider/validation failure; it does not guarantee voice availability, rendering success, publication availability or later lessons. Today's lesson remains held for user review; merging these changes does not publish it.

@@ -11,8 +11,8 @@ from .story_contract import validate_story
 class CreativeReviewFailed(ValueError):pass
 
 MECHANISM_WORDS={
- 'route':['route','rout','send','forward','reach','request','service','proxy','gateway','path','connect'],
- 'block':['reject','stop','denied','check','auth','token','limit','allow','block','valid','permission'],
+ 'route':['route','rout','send','forward','reach','request','service','proxy','gateway','path','connect','fetch','revalidat'],
+ 'block':['reject','stop','denied','check','auth','token','limit','allow','block','valid','permission','private','no-store'],
  'queue':['queue','wait','backlog','worker','work','task','buffer','arriv','drain'],
  'fanout':['parallel','fan','both','multiple','aggregate','combine','backend','service'],
  'select':['balanc','healthy','instance','select','choose','chosen','route'],
@@ -44,17 +44,21 @@ def inspect_opening(frames,width=1080,height=1920):
     if not end['after']['x']-start['after']['x']>550:raise CreativeReviewFailed('Opening has labels but no meaningful movement')
     return positions
 
+def check_mechanism_language(content):
+    for scene in content['scenes'][1:-1]:
+        text=(scene['narration']+' '+scene['note']).lower()
+        if not any(word in text for word in MECHANISM_WORDS[scene['action']]):raise CreativeReviewFailed('Narration does not describe the selected physical action')
+    all_text=' '.join(s['narration']+' '+s['note'] for s in content['scenes'])
+    if re.search(r'\b(always faster|guaranteed|guarantees (?:success|availability|reliability|speed|zero|no)|best for|zero latency|never fails|eliminates all)\b',all_text,re.I):raise CreativeReviewFailed('Unqualified performance claim needs correction')
+    return True
+
 def check_story_language(content,audio):
     try:validate_story(content)
     except ValueError as error:raise CreativeReviewFailed(str(error)) from None
     if not 3.1<=audio['scenes'][0]['duration']<=8:raise CreativeReviewFailed('Opening must demonstrate its consequence without a long setup')
     first=content['scenes'][0]['narration']
     if re.match(r'\s*(Imagine|Welcome|Introducing|Today we|In this video)\b',first,re.I):raise CreativeReviewFailed('Opening delays the consequence with setup')
-    for scene in content['scenes'][1:-1]:
-        text=(scene['narration']+' '+scene['note']).lower()
-        if not any(word in text for word in MECHANISM_WORDS[scene['action']]):raise CreativeReviewFailed('Narration does not describe the selected physical action')
-    all_text=' '.join(s['narration']+' '+s['note'] for s in content['scenes'])
-    if re.search(r'\b(always faster|guaranteed|guarantees|best for|zero latency|never fails|eliminates all)\b',all_text,re.I):raise CreativeReviewFailed('Unqualified performance claim needs correction')
+    check_mechanism_language(content)
     return True
 
 def review_rendered(lesson,content,audio,project,content_hash):

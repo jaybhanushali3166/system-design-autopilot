@@ -31,6 +31,24 @@ class GeminiHttpTests(unittest.TestCase):
         return api.post('https://example.test', key='private-key', model=model, payload={})
 
     @patch.object(api.requests, 'post')
+    def test_long_script_response_and_safe_timeout_diagnostic(self, post):
+        post.return_value=response(200)
+        api.post('https://example.test',key='secret',model='script',payload={},read_timeout=240)
+        self.assertEqual(post.call_args.kwargs['timeout'],(10,240))
+        post.side_effect=api.requests.ReadTimeout('secret credential URL')
+        with self.assertRaises(api.GeminiRequestError) as caught:
+            api.post('https://example.test',key='secret',model='script',payload={},max_attempts=1)
+        self.assertEqual(caught.exception.diagnostic()['transport_error'],'read_timeout')
+        self.assertNotIn('secret',str(caught.exception.diagnostic()))
+
+    @patch.object(api.requests, 'post')
+    def test_invalid_timeout_never_sends_a_request(self, post):
+        for value in [True,0,301,float('inf')]:
+            with self.assertRaises(ValueError):
+                api.post('https://example.test',key='secret',model='script',payload={},read_timeout=value)
+        post.assert_not_called()
+
+    @patch.object(api.requests, 'post')
     def test_consecutive_scenes_are_paced_without_waiting_for_429(self, post):
         starts = []
         def send(*args, **kwargs):

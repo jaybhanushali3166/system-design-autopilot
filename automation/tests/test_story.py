@@ -97,6 +97,21 @@ class ScriptRepairTests(unittest.TestCase):
             path=Path(folder)/'script-attempts.json';result=generate({'id':'lesson-08'},feedback={'status':'available','early_reels':[]},diagnostics=path)
             self.assertEqual(result['story']['version'],2);self.assertEqual(post.call_count,2)
             self.assertEqual([row['valid'] for row in json.loads(path.read_text())],[False,True])
+    def test_latency_controls_are_only_sent_to_the_supported_model(self):
+        from unittest.mock import patch
+        from automation.content import generate
+        for model in ['gemini-3-flash-preview','gemini-2.5-flash']:
+            with patch.dict('os.environ',{'GEMINI_API_KEY':'test-only','GEMINI_MODEL':model}),patch('automation.content.post',return_value=self.response(story_content())) as post:
+                generate({'id':'lesson-10'})
+                options=post.call_args.kwargs
+                self.assertEqual(options['read_timeout'],240)
+                self.assertEqual(options['max_attempts'],2)
+                conf=options['payload']['generationConfig']
+                if model=='gemini-3-flash-preview':
+                    self.assertEqual(conf['thinkingConfig']['thinkingLevel'],'minimal')
+                    self.assertEqual(conf['temperature'],1.0)
+                else:self.assertNotIn('thinkingConfig',conf)
+
     def test_invalid_second_script_stops_without_an_unbounded_loop(self):
         from unittest.mock import patch
         from automation.content import generate

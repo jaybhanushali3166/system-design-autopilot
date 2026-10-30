@@ -20,7 +20,7 @@ def validate_story(content):
     scenes=content.get('scenes',[])
     if len(scenes)!=8 or scenes[0].get('action')!='compare' or scenes[-1].get('action')!='checklist':raise ValueError('Eight story beats must begin with proof and end in a diagnostic')
     if not 8<=len(scenes[0]['narration'].split())<=18:raise ValueError('Opening narration must reach the consequence in 8–18 words')
-    if not re.search(r'\b(reaches|arrives|stops|rejects|waits|reuses|skips|routes|returns|keeps|blocks|finds|sends|serves|gets|goes|passes|moves|loads|answers|drains|avoids|bypasses|protects|limits|accepts|delivers|chooses|flows|stalls|rejected|allowed)\b',scenes[0]['narration'],re.I):raise ValueError('Opening must state an observable consequence')
+    if not re.search(r'\b(reaches|arrives|stops|rejects|waits|reuses|skips|routes|returns|keeps|blocks|finds|sends|serves|gets|goes|passes|moves|loads|answers|drains|avoids|bypasses|protects|limits|accepts|delivers|chooses|flows|stalls|finishes|completes|hits|misses|rejected|allowed)\b',scenes[0]['narration'],re.I):raise ValueError('Opening must state an observable consequence')
     if scenes[1].get('action') in ['compare','checklist']:raise ValueError('Second beat must advance the example')
     for i,scene in enumerate(scenes):
         action=scene.get('action')
@@ -43,6 +43,6 @@ def validate_story(content):
         if not isinstance(line,str) or not 4<=len(line.split())<=10 or len(line)>66:raise ValueError('Diagnostic line exceeds reading budget')
         if not re.match(r'^(Check|Compare|Inspect|Trace|Measure|Test|Record|Verify|Watch|Limit|Set|Find|Confirm|Separate|Count|Review|Choose|Log|Keep|Ask)\b',line):raise ValueError('Takeaway must state a concrete action')
     combined=json.dumps(content)
-    if re.search(r'\b(instantly|always faster|guaranteed|guarantees|best for|zero latency|never fails|eliminates all)\b',combined,re.I):raise ValueError('Unqualified performance claim needs correction')
+    if re.search(r'\b(instantly|always faster|guaranteed|guarantees (?:success|availability|reliability|speed|zero|no)|best for|zero latency|never fails|eliminates all)\b',combined,re.I):raise ValueError('Unqualified performance claim needs correction')
     if re.search(r'\b[0-9]+(?:\.[0-9]+)?\s*(?:ms|milliseconds|seconds|ns|qps|rps|GB|MB|TB|%)\b',combined,re.I) and 'hypothetical' not in combined.lower():raise ValueError('Numeric performance example must explicitly be hypothetical')
     return story
