@@ -45,3 +45,14 @@ class CorrectionFeedbackTests(unittest.TestCase):
   c={'scenes':[{'narration':'An image request waits.','action':'cache-hit','nodes':[{},{}]}]}
   message=correction_feedback(c,ValueError('Invalid candidate'))
   self.assertIn('4 words',message);self.assertIn('exactly 4 nodes',message);self.assertIn('never below 130',message)
+
+class StorageGuaranteeLanguageTests(unittest.TestCase):
+ def test_discussing_guarantees_is_not_a_performance_promise(self):
+  from automation.content import validate
+  c=json.loads((ROOT/'automation/lessons/lesson-11.approved.json').read_text())
+  self.assertEqual(validate(c),c)
+ def test_unqualified_success_promise_is_still_rejected(self):
+  from automation.content import validate
+  c=json.loads((ROOT/'automation/lessons/lesson-11.approved.json').read_text())
+  c['scenes'][4]['note']='This model guarantees success'
+  with self.assertRaises(ValueError):validate(c)

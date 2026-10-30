@@ -49,7 +49,7 @@ def check_mechanism_language(content):
         text=(scene['narration']+' '+scene['note']).lower()
         if not any(word in text for word in MECHANISM_WORDS[scene['action']]):raise CreativeReviewFailed('Narration does not describe the selected physical action')
     all_text=' '.join(s['narration']+' '+s['note'] for s in content['scenes'])
-    if re.search(r'\b(always faster|guaranteed|guarantees|best for|zero latency|never fails|eliminates all)\b',all_text,re.I):raise CreativeReviewFailed('Unqualified performance claim needs correction')
+    if re.search(r'\b(always faster|guaranteed|guarantees (?:success|availability|reliability|speed|zero|no)|best for|zero latency|never fails|eliminates all)\b',all_text,re.I):raise CreativeReviewFailed('Unqualified performance claim needs correction')
     return True
 
 def check_story_language(content,audio):

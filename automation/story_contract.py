@@ -43,6 +43,6 @@ def validate_story(content):
         if not isinstance(line,str) or not 4<=len(line.split())<=10 or len(line)>66:raise ValueError('Diagnostic line exceeds reading budget')
         if not re.match(r'^(Check|Compare|Inspect|Trace|Measure|Test|Record|Verify|Watch|Limit|Set|Find|Confirm|Separate|Count|Review|Choose|Log|Keep|Ask)\b',line):raise ValueError('Takeaway must state a concrete action')
     combined=json.dumps(content)
-    if re.search(r'\b(instantly|always faster|guaranteed|guarantees|best for|zero latency|never fails|eliminates all)\b',combined,re.I):raise ValueError('Unqualified performance claim needs correction')
+    if re.search(r'\b(instantly|always faster|guaranteed|guarantees (?:success|availability|reliability|speed|zero|no)|best for|zero latency|never fails|eliminates all)\b',combined,re.I):raise ValueError('Unqualified performance claim needs correction')
     if re.search(r'\b[0-9]+(?:\.[0-9]+)?\s*(?:ms|milliseconds|seconds|ns|qps|rps|GB|MB|TB|%)\b',combined,re.I) and 'hypothetical' not in combined.lower():raise ValueError('Numeric performance example must explicitly be hypothetical')
     return story
