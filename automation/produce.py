@@ -10,6 +10,7 @@ from .creative_feedback import fetch_feedback,policy
 from .story_contract import validate_story
 from .creative_review import review_rendered,CreativeReviewFailed
 from .gemini_http import GeminiRequestError
+from .elevenlabs_voice import ElevenLabsRequestError
 from .voice import synthesize
 from .gemini_voice import identity as voice_identity
 from .render import build,identity as render_identity
@@ -154,7 +155,7 @@ if __name__=='__main__':
  parser.add_argument('--job-token',default='');parser.add_argument('--worker-url',default='');args=parser.parse_args()
  try:run(args)
  except Exception as exc:
-  diagnostic=exc.diagnostic() if isinstance(exc,GeminiRequestError) else {'type':type(exc).__name__}
+  diagnostic=exc.diagnostic() if isinstance(exc,(GeminiRequestError,ElevenLabsRequestError)) else {'type':type(exc).__name__}
   diagnostic['stage']=CURRENT_STAGE
   if isinstance(exc,CreativeReviewFailed):diagnostic['reason']='Local rendered-story gate rejected this candidate; inspect the review evidence'
   safe_audio_errors={'Invalid measured word times','Nonmonotonic measured word times','Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption','Scene text missing from continuous script','Nonmonotonic scene timings','Nonmonotonic caption timings','Continuous narration outside 45–105 second budget'}
@@ -164,7 +165,7 @@ if __name__=='__main__':
    write_json(WORK/'runs'/args.lesson/'generation-error.json',diagnostic)
   if args.worker_url and args.job_token:
    try:callback(args.worker_url,{'lesson_id':args.lesson,'job_token':args.job_token,'error':True,
-    **({'retry_at':exc.retry_at} if isinstance(exc,GeminiRequestError) and exc.retry_at else {})})
+    **({'retry_at':exc.retry_at} if isinstance(exc,(GeminiRequestError,ElevenLabsRequestError)) and exc.retry_at else {})})
    except Exception:pass
   print('Production diagnostic: '+json.dumps(diagnostic))
   # Provider libraries can include credential-bearing URLs in exceptions. Keep console errors generic.

@@ -55,7 +55,7 @@ Two hand-authored pilot lesson packets are included: requirements (`lesson-01`) 
 
 ## Course voice
 
-The production voice is local Kokoro **Fenrir** (`am_fenrir`, Kokoro v1.0 ONNX), running on the GitHub CPU runner at speed1.0. Voice synthesis needs no API key and makes no hosted voice-provider request. The first run downloads the model and voice files; subsequent runs reuse the existing model cache. The full script becomes one waveform, normalized with FFmpeg. Local Whisper measures word times and builds short verbatim captions using the same agreement and scene-boundary checks as the Gemini path. Invalid, silent or badly aligned speech stops the job. Gemini Varo remains an explicit supported alternative, but there is no automatic paid/provider fallback.
+The configured scheduled voice is ElevenLabs **Chris - Warm, Resonant, Thoughtful**, exact voice ID `vrZ1gMhrsD9LI0gRKrLh`, using `eleven_flash_v2_5`. The runner requires encrypted GitHub secret `ELEVENLABS_API_KEY` and an ElevenLabs account with access to this voice/API and appropriate usage rights. The script is synthesized once into a cached waveform, normalized, and locally aligned into measured short captions. Transport, quota, permission and plan failures stop with safe diagnostics; they never substitute another voice or repeatedly spend requests within the same synthesis call. Kokoro Fenrir and Gemini Varo remain explicitly selectable alternatives.
 
 Voice/model/style identity participates in narration and media hashes, so a resumed Kokoro job cannot reuse its old voice audio as Varo. Gemini rate limits and temporary service errors receive bounded retries; permanent access errors stop. There is no automatic change of voice or paid provider. The scheduler's existing retry/hold policy applies if narration fails.
 
@@ -194,3 +194,8 @@ The current reviewed buffer enables hash-pinned fallbacks only for lessons 10 an
 Kokoro identity includes provider, voice, model contract, speed and alignment model, so a Varo file cannot be reused after the switch. Changing Fenrir speed or alignment also invalidates narration reuse. Raw normalized waveforms and measured alignment are cached by full script plus voice identity; matching retries do not resynthesize. The renderer still requires measured short captions, the 45–105 second duration budget, audio levels, layout checks and encoded opening verification.
 
 To roll back, revert the voice-switch PR; this restores the previous Varo voice/style configuration. Gemini script generation still uses `GEMINI_API_KEY`; switching speech does not remove the script provider’s requirement.
+
+
+### Exact ElevenLabs voice selection
+
+`voice_provider=elevenlabs` routes to the configured opaque voice ID, not the built-in voice also named Chris. API headers and provider response bodies are never printed. Audio is cached by text plus voice/model/settings/alignment identity and written atomically. HTTP402 reports payment/plan access required, permission errors stop, and transient failures defer the job without an immediate duplicate synthesis request. No automatic provider fallback is used. This switch must remain a draft until a real account-access check and full unpublished reel verification pass.

@@ -28,6 +28,8 @@ on:
         required: false
       GEMINI_API_KEY:
         required: false
+      ELEVENLABS_API_KEY:
+        required: false
       AUTOPILOT_CALLBACK_TOKEN:
         required: false
       AUTOPILOT_WORKER_URL:
@@ -73,6 +75,7 @@ jobs:
     timeout-minutes: 40
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3-flash-preview' }}
       CLOUDINARY_URL: ${{ secrets.AUTOPILOT_CLOUDINARY_URL }}
       AUTOPILOT_CALLBACK_TOKEN: ${{ secrets.AUTOPILOT_CALLBACK_TOKEN }}
@@ -127,9 +130,9 @@ jobs:
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/audio.json
             .autopilot/runs/${{ inputs.lesson_id }}/assets
-          key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py', 'automation/elevenlabs_voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-
+            reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py', 'automation/elevenlabs_voice.py') }}-
             reel-progress-v3-${{ inputs.lesson_id }}-
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |

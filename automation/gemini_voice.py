@@ -12,13 +12,18 @@ STYLE='Friendly conversational senior engineer teaching a colleague. Natural pau
 
 def identity(settings):
  provider=settings.get('voice_provider','kokoro')
- if provider not in ['gemini','kokoro']:raise ValueError('Unsupported voice provider')
+ if provider not in ['gemini','kokoro','elevenlabs']:raise ValueError('Unsupported voice provider')
  result={'provider':provider,'voice':settings['voice']}
  if provider=='kokoro':
   import math
   speed=settings.get('voice_speed',1.0)
   if isinstance(speed,bool) or not isinstance(speed,(float,int)) or not math.isfinite(speed) or not .5<=speed<=2:raise ValueError('Invalid Kokoro speech speed')
   result.update(model='kokoro-v1.0-onnx',speed=speed,alignment_model=settings.get('alignment_model','tiny.en'),contract=3)
+ if provider=='elevenlabs':
+  if not re.fullmatch(r'[A-Za-z0-9_-]{6,64}',settings['voice']):raise ValueError('Invalid ElevenLabs voice ID')
+  model=settings.get('voice_model','eleven_flash_v2_5')
+  if model not in ['eleven_flash_v2_5','eleven_multilingual_v2']:raise ValueError('Unsupported ElevenLabs speech model')
+  result.update(model=model,voice_settings={'stability':.45,'similarity_boost':.75,'style':.1,'use_speaker_boost':True},alignment_model=settings.get('alignment_model','tiny.en'),contract=1)
  if provider=='gemini':result.update(model=settings.get('voice_model','gemini-3.8-flash-tts'),
   style=settings.get('voice_style',STYLE),alignment_model=settings.get('alignment_model','tiny.en'),contract=2)
  return result

@@ -19,14 +19,14 @@
   "late_window_minutes": 30,
   "publishing_enabled": false,
   "generation_provider": "gemini",
-  "voice": "am_fenrir",
+  "voice": "vrZ1gMhrsD9LI0gRKrLh",
   "max_generation_attempts": 3,
   "max_duration_seconds": 105,
   "fps": 30,
   "width": 1080,
   "height": 1920,
   "hyperframes_version": "0.8.198",
-  "voice_provider": "kokoro",
+  "voice_provider": "elevenlabs",
   "gemini_voice_interval_seconds": 65,
   "alignment_model": "tiny.en",
   "video_theme": "light-workshop",
@@ -36,5 +36,7 @@
     "lesson-10": "2b0c27f0ff4b3dc670ce595e4dde959d1e8600fca27b81409bd06c6c6187ebaf",
     "lesson-11": "3121d23d27a7050e84e6f876cba3e29671002b6c6bb21baa65bfaba1db416e5c"
   },
-  "voice_speed": 1.0
+  "voice_speed": 1.0,
+  "voice_name": "Chris - Warm, Resonant, Thoughtful",
+  "voice_model": "eleven_flash_v2_5"
 }
