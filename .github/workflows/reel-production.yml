@@ -128,6 +128,7 @@ jobs:
           key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-
+            reel-progress-v3-${{ inputs.lesson_id }}-
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
           args=(--lesson "$LESSON_ID" --provider "$CONTENT_PROVIDER" --resume)
@@ -176,6 +177,7 @@ jobs:
             .autopilot/runs/**/audio.json
             .autopilot/runs/**/alignment-*.json
             .autopilot/runs/**/captions.srt
+            .autopilot/runs/**/script-fallback.json
             .autopilot/runs/**/generation-error.json
             .autopilot/runs/**/creative-feedback.json
           retention-days: 7
