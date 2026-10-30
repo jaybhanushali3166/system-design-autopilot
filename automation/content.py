@@ -53,6 +53,25 @@ def validate(data):
   check_mechanism_language(data)
  return data
 
+def correction_feedback(candidate,error):
+ # Give the model independent measurable constraints together, not one moving target.
+ rules=[str(error)]
+ if isinstance(candidate,dict) and isinstance(candidate.get('scenes'),list):
+  scenes=candidate['scenes']
+  words=sum(len(s.get('narration','').split()) for s in scenes if isinstance(s,dict) and isinstance(s.get('narration',''),str))
+  rules.append(f'Total narration is {words} words; keep 145–175 words, never below 130.')
+  for i,scene in enumerate(scenes):
+   if not isinstance(scene,dict):continue
+   action=scene.get('action');nodes=scene.get('nodes')
+   required=4 if action in ['fanout','select','replicate','cache-hit','cache-miss'] else 3
+   if action not in ['compare','checklist'] and isinstance(nodes,list) and len(nodes)!=required:
+    rules.append(f'Scene {i+1}: {action} requires exactly {required} nodes, got {len(nodes)}.')
+  checks=candidate.get('story',{}).get('takeaway',[]) if isinstance(candidate.get('story'),dict) else []
+  for i,line in enumerate(checks):
+   if isinstance(line,str) and (not 4<=len(line.split())<=10 or len(line)>66):rules.append(f'Takeaway {i+1}: use 4–10 words and at most 66 characters.')
+ return ' '.join(dict.fromkeys(rules))[:600]
+
+
 def script_progress(path, request_hash, model, resume):
  """Only compatible, well-formed checkpoints can spend a saved correction."""
  empty={'version':1,'request_hash':request_hash,'model':model,'attempts':[]}
@@ -66,7 +85,7 @@ def script_progress(path, request_hash, model, resume):
    if not isinstance(row,dict) or row.get('attempt')!=i+1 or type(row.get('valid')) is not bool:raise ValueError()
    if row['valid']:
     if i!=len(attempts)-1 or not isinstance(row.get('candidate'),dict):raise ValueError()
-   elif not isinstance(row.get('local_rule'),str) or len(row['local_rule'])>180:raise ValueError()
+   elif not isinstance(row.get('local_rule'),str) or len(row['local_rule'])>600:raise ValueError()
   cooldown=saved.get('cooldown')
   if cooldown is not None:
    if not isinstance(cooldown,dict) or type(cooldown.get('retry_at')) is not int:raise ValueError()
@@ -177,7 +196,7 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   try:
    candidate=json.loads(text);result=validate(candidate);validate_story(result)
   except (ValueError,KeyError,TypeError) as error:
-   attempts.append({'attempt':len(attempts)+1,'valid':False,'local_rule':str(error)[:180],'candidate':candidate})
+   attempts.append({'attempt':len(attempts)+1,'valid':False,'local_rule':correction_feedback(candidate,error),'candidate':candidate})
    save_script_progress(saved,checkpoint,diagnostics)
    if len(attempts)>=2:raise
    print('Correcting one script after local story-contract rejection; no narration generated yet.',flush=True)

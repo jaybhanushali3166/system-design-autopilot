@@ -38,3 +38,10 @@ class MechanismPreflightTests(unittest.TestCase):
   c['scenes'][5]['narration']='The stored object remains visible here while the illustration changes its appearance for this next demonstration.'
   c['scenes'][5]['note']='A different illustration.'
   with self.assertRaises(ValueError):validate(c)
+
+class CorrectionFeedbackTests(unittest.TestCase):
+ def test_feedback_reports_word_count_and_endpoint_mismatch_together(self):
+  from automation.content import correction_feedback
+  c={'scenes':[{'narration':'An image request waits.','action':'cache-hit','nodes':[{},{}]}]}
+  message=correction_feedback(c,ValueError('Invalid candidate'))
+  self.assertIn('4 words',message);self.assertIn('exactly 4 nodes',message);self.assertIn('never below 130',message)
