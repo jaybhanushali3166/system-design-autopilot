@@ -6,7 +6,7 @@ import requests
 from automation.elevenlabs_voice import request_audio,ElevenLabsRequestError,synthesize
 from automation.gemini_voice import identity
 
-VOICE='vrZ1gMhrsD9LI0gRKrLh'
+VOICE='pNInz6obpgDQGcFmaJgB'
 class Samples:
  ndim=1
  def __len__(self):return 480000

@@ -19,7 +19,7 @@
   "late_window_minutes": 30,
   "publishing_enabled": false,
   "generation_provider": "gemini",
-  "voice": "vrZ1gMhrsD9LI0gRKrLh",
+  "voice": "pNInz6obpgDQGcFmaJgB",
   "max_generation_attempts": 3,
   "max_duration_seconds": 105,
   "fps": 30,
@@ -37,6 +37,6 @@
     "lesson-11": "3121d23d27a7050e84e6f876cba3e29671002b6c6bb21baa65bfaba1db416e5c"
   },
   "voice_speed": 1.0,
-  "voice_name": "Chris - Warm, Resonant, Thoughtful",
+  "voice_name": "Adam - Dominant, Firm",
   "voice_model": "eleven_flash_v2_5"
 }
