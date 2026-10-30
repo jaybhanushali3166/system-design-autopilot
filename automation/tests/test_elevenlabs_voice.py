@@ -55,3 +55,14 @@ class ElevenLabsVoiceTests(unittest.TestCase):
    out=synthesize(content,p,VOICE,{'voice_model':'eleven_flash_v2_5'})
    post.assert_not_called();self.assertEqual(out['caption_groups'],groups);self.assertEqual(out['voice'],'elevenlabs/'+VOICE)
    self.assertEqual(out['duration'],60.3);self.assertFalse(list((p/'assets').glob('*.part*')))
+
+class VoiceAttributionTests(unittest.TestCase):
+ def test_configured_free_use_credit_is_first_and_not_duplicated(self):
+  from automation.produce import publication_caption
+  with patch('automation.produce.config',return_value={'voice_provider':'elevenlabs','voice_attribution':'Voice: elevenlabs.io'}):
+   c={'caption':'Follow this order. #systemdesign'}
+   self.assertEqual(publication_caption(c),'Voice: elevenlabs.io\n\nFollow this order. #systemdesign')
+   c['caption']=publication_caption(c);self.assertEqual(publication_caption(c),c['caption'])
+ def test_unconfigured_credit_does_not_change_caption(self):
+  from automation.produce import publication_caption
+  with patch('automation.produce.config',return_value={}):self.assertEqual(publication_caption({'caption':'Original caption'}),'Original caption')

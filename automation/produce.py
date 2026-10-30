@@ -93,6 +93,14 @@ def lesson_content(lesson, provider, project, resume):
  write_json(project/'content.json',content)
  return content
 
+def publication_caption(content):
+ caption=content['caption'];credit=config().get('voice_attribution','')
+ if credit:
+  if config().get('voice_provider')!='elevenlabs' or credit not in ['Voice: elevenlabs.io','Voice: 11.ai']:raise ValueError('Invalid voice attribution configuration')
+  if not caption.startswith(credit+'\n'):caption=credit+'\n\n'+caption
+ if len(caption)>2100:raise ValueError('Publication caption exceeds platform budget')
+ return caption
+
 def refresh_scene_metadata(content,audio):
  # Narration reuse must not freeze old titles, nodes, notes or action choices.
  measured=audio['scenes']
@@ -138,7 +146,7 @@ def run(args):
   midpoint=scene['start']+scene['duration']*.65
   subprocess.run(['ffmpeg','-y','-v','error','-ss',str(midpoint),'-i',str(project/'reel.mp4'),'-frames:v','1',str(project/f'review-{scene["index"]}.png')],check=True)
  result={'lesson_id':lesson['id'],'job_token':args.job_token,'content_hash':hash_value,
-         'validation':validate,'voice_profile':voice_profile,'cover':cover_metadata,'caption':content['caption'],'dry_run':args.dry_run,
+         'validation':validate,'voice_profile':voice_profile,'cover':cover_metadata,'caption':publication_caption(content),'dry_run':args.dry_run,
          'run_id':os.environ.get('GITHUB_RUN_ID','local'),'video_url':None,'cover_url':None}
  write_json(project/'result.json',result)
  if args.upload:
