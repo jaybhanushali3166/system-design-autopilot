@@ -65,7 +65,7 @@ def reviewed_script_fallback(lesson):
 def lesson_content(lesson, provider, project, resume):
  # A restored runner must use exactly the same script to reuse its scene audio.
  source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview'),
-         'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
+         'reviewed_fallback_hash':config().get('reviewed_script_fallbacks',{}).get(lesson['id']),'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
  if provider=='approved':
   approved=ROOT/'automation/lessons'/f'{lesson["id"]}.approved.json'
   source['approved_hash']=hashlib.sha256(approved.read_bytes()).hexdigest() if approved.exists() else None

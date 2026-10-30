@@ -179,3 +179,9 @@ Gemini 3 Flash script calls explicitly use minimal thinking and the vendor-recom
 A script request has a 240-second read timeout with two transport attempts instead of discarding a slow response at 120 seconds up to three times. Quota-aware backoff, saved correction budgets and credential-safe error handling remain in force. Diagnostics now distinguish read/connect timeouts from other connection failures without logging raw exception text. Neither this change nor a fresh API key guarantees provider availability or quota.
 
 The existing production workflow accepts `prepare_only: true` for a script-only preflight. It exits before speech, rendering, upload and callback, and retains the draft and progress in the usual cache/artifact for inspection. Use it to verify a future lesson without creating another video or modifying its publishing state.
+
+### Reviewed script fallback and stage diagnostics
+
+`generation-error.json` now identifies `script`, `voice`, `render`, `validation`, or `upload` so script quota failures cannot be mistaken for voice rate limits. Script requests use bounded transport retries; daily quota deferral remains preserved.
+
+A fallback is disabled unless `automation/config.json` explicitly maps a lesson ID to the SHA256 of its reviewed `automation/lessons/lesson-NN.approved.json` bytes under `reviewed_script_fallbacks`. A Gemini script request or validation failure may use only that exact lesson file, after schema and story validation. Missing/changed files fail closed. `script-fallback.json` records use; no fallback publishes directly, bypasses rendering checks, substitutes another lesson, or changes the schedule. Voice remains Varo. New fallback scripts still need editorial review before enabling their hashes.
