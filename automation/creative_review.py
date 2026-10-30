@@ -12,7 +12,7 @@ class CreativeReviewFailed(ValueError):pass
 
 MECHANISM_WORDS={
  'route':['route','rout','send','forward','reach','request','service','proxy','gateway','path','connect','fetch','revalidat'],
- 'block':['reject','stop','denied','check','auth','token','limit','allow','block','valid','permission'],
+ 'block':['reject','stop','denied','check','auth','token','limit','allow','block','valid','permission','private','no-store'],
  'queue':['queue','wait','backlog','worker','work','task','buffer','arriv','drain'],
  'fanout':['parallel','fan','both','multiple','aggregate','combine','backend','service'],
  'select':['balanc','healthy','instance','select','choose','chosen','route'],
