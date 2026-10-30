@@ -26,3 +26,15 @@ class ReviewedFallbackTests(unittest.TestCase):
  def test_no_reviewed_fallback_preserves_failure(self):
   with TemporaryDirectory() as d,patch('automation.produce.generate',side_effect=GeminiRequestError(503)),patch('automation.produce.fetch_feedback',return_value={}),patch('automation.produce.reviewed_script_fallback',return_value=None):
    with self.assertRaises(GeminiRequestError):lesson_content({'id':'lesson-10'},'gemini',Path(d),False)
+
+class MechanismPreflightTests(unittest.TestCase):
+ def test_fetch_and_revalidation_are_valid_route_language(self):
+  from automation.content import validate
+  c=json.loads((ROOT/'automation/lessons/lesson-10.approved.json').read_text())
+  self.assertEqual(validate(c),c)
+ def test_action_mismatch_is_rejected_before_narration(self):
+  from automation.content import validate
+  c=json.loads((ROOT/'automation/lessons/lesson-10.approved.json').read_text())
+  c['scenes'][5]['narration']='The stored object remains visible here while the illustration changes its appearance for this next demonstration.'
+  c['scenes'][5]['note']='A different illustration.'
+  with self.assertRaises(ValueError):validate(c)

@@ -5,6 +5,7 @@ from pathlib import Path
 from .common import ROOT, load_env, write_json
 from .creative_feedback import policy
 from .story_contract import validate_story,ACTIONS
+from .creative_review import check_mechanism_language
 from .gemini_http import post, GeminiRequestError
 KINDS = ['flow','queue','replicas','ring','comparison','index','workflow','metric']
 SCHEMA = {'type':'object','properties':{
@@ -47,7 +48,9 @@ def validate(data):
    if set(n)!={'label','value','tone'} or n['tone'] not in ['cyan','green','red','muted']: raise ValueError('Invalid diagram node')
    if not isinstance(n['label'],str) or not isinstance(n['value'],str) or len(n['label'])>24 or len(n['value'])>36: raise ValueError('Diagram node text exceeds budget')
  if not 130<=words<=230: raise ValueError(f'Narration must be 130–230 words; got {words}')
- if 'story' in data:validate_story(data)
+ if 'story' in data:
+  validate_story(data)
+  check_mechanism_language(data)
  return data
 
 def script_progress(path, request_hash, model, resume):
