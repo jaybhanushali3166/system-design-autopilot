@@ -20,7 +20,7 @@ def validate_story(content):
     scenes=content.get('scenes',[])
     if len(scenes)!=8 or scenes[0].get('action')!='compare' or scenes[-1].get('action')!='checklist':raise ValueError('Eight story beats must begin with proof and end in a diagnostic')
     if not 8<=len(scenes[0]['narration'].split())<=18:raise ValueError('Opening narration must reach the consequence in 8–18 words')
-    if not re.search(r'\b(reaches|arrives|stops|rejects|waits|reuses|skips|routes|returns|keeps|blocks|finds|sends|serves|gets|goes|passes|moves|loads|answers|drains|avoids|bypasses|protects|limits|accepts|delivers|chooses|flows|stalls|rejected|allowed)\b',scenes[0]['narration'],re.I):raise ValueError('Opening must state an observable consequence')
+    if not re.search(r'\b(reaches|arrives|stops|rejects|waits|reuses|skips|routes|returns|keeps|blocks|finds|sends|serves|gets|goes|passes|moves|loads|answers|drains|avoids|bypasses|protects|limits|accepts|delivers|chooses|flows|stalls|finishes|completes|hits|misses|rejected|allowed)\b',scenes[0]['narration'],re.I):raise ValueError('Opening must state an observable consequence')
     if scenes[1].get('action') in ['compare','checklist']:raise ValueError('Second beat must advance the example')
     for i,scene in enumerate(scenes):
         action=scene.get('action')

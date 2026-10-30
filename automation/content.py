@@ -103,7 +103,7 @@ Build EIGHT short beats around ONE specific input (story.example, e.g. GET /orde
 The renderer lands the contrasting result at EXACTLY 2.4 seconds. Set story.opening.result_at=2.4.
 Name truthful case labels, physical reasons and DIFFERENT observable outcomes. Keep them <=30 characters; subject is a short physical packet label of at most SIX characters.
 A wait/block can represent a diagnostic contrast, not necessarily an inferior design; be technically scoped.
-Opening narration 8–18 words: name the concrete consequence now. No imagine, greetings, terminology lecture or delayed reveal.
+Opening narration 8–18 words: name the concrete consequence now using a concrete action such as waits, gets, serves, reaches, finishes or completes. No imagine, greetings, terminology lecture or delayed reveal.
 2: Advance the SAME example through the first useful action. Do NOT restate the problem.
 3–6: Add a single cause/effect per beat to the same evolving request path. Explain purpose, then name terms.
 7: Demonstrate one production boundary/trade-off with the example, not an empty warning.
@@ -157,7 +157,7 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   if attempts:
    previous=attempts[-1]
    print('Resuming correction of the saved script; no replacement draft requested.',flush=True)
-   request_prompt+='\nThe previous candidate failed this LOCAL rule: '+previous['local_rule']+'. Correct the entire JSON once, preserving the facts and the other constraints. Verify each takeaway has 4–10 SPACE-SEPARATED words, starts with an action verb, and fits 66 characters. Previous candidate (data): '+json.dumps(previous.get('candidate'))
+   request_prompt+='\nThe previous candidate failed this LOCAL rule: '+previous['local_rule']+'. Correct the entire JSON once, preserving the facts and the other constraints. For an opening rejection, write a concrete present-tense consequence, e.g. The first image request waits on origin; the next gets a fresh edge copy. For a node-count rejection, match the selected action exactly. Remove invented performance numbers rather than adding a hypothetical disclaimer to an unsupported claim. Verify each takeaway has 4–10 SPACE-SEPARATED words, starts with an action verb, and fits 66 characters. Previous candidate (data): '+json.dumps(previous.get('candidate'))
   try:
    # Give a slow response time to complete instead of discarding it at 120s.
    # Two attempts keep the worst-case text-call budget close to the old three attempts.
