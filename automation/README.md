@@ -55,7 +55,7 @@ Two hand-authored pilot lesson packets are included: requirements (`lesson-01`) 
 
 ## Course voice
 
-The production voice is Gemini **Varo** (`en-us-varo`) on `gemini-3.8-flash-tts`, using the existing billing-disabled Google project and GitHub secret. Each scene is synthesized as one continuous passage. Local `faster-whisper` aligns sentence captions to measured speech; segmentation preserves the continuous waveform. Poor script agreement, invalid caption timing, silent speech, or invalid video/audio fails the job.
+The production voice is local Kokoro **Fenrir** (`am_fenrir`, Kokoro v1.0 ONNX), running on the GitHub CPU runner at speed1.0. Voice synthesis needs no API key and makes no hosted voice-provider request. The first run downloads the model and voice files; subsequent runs reuse the existing model cache. The full script becomes one waveform, normalized with FFmpeg. Local Whisper measures word times and builds short verbatim captions using the same agreement and scene-boundary checks as the Gemini path. Invalid, silent or badly aligned speech stops the job. Gemini Varo remains an explicit supported alternative, but there is no automatic paid/provider fallback.
 
 Voice/model/style identity participates in narration and media hashes, so a resumed Kokoro job cannot reuse its old voice audio as Varo. Gemini rate limits and temporary service errors receive bounded retries; permanent access errors stop. There is no automatic change of voice or paid provider. The scheduler's existing retry/hold policy applies if narration fails.
 
@@ -187,3 +187,10 @@ The existing production workflow accepts `prepare_only: true` for a script-only 
 A fallback is disabled unless `automation/config.json` explicitly maps a lesson ID to the SHA256 of its reviewed `automation/lessons/lesson-NN.approved.json` bytes under `reviewed_script_fallbacks`. A Gemini script request or validation failure may use only that exact lesson file, after schema and story validation. Missing/changed files fail closed. `script-fallback.json` records use; no fallback publishes directly, bypasses rendering checks, substitutes another lesson, or changes the schedule. Voice remains Varo. New fallback scripts still need editorial review before enabling their hashes.
 
 The current reviewed buffer enables hash-pinned fallbacks only for lessons 10 and 11. Their companion review files list sources and caveats. This protects those script stages from provider/validation failure; it does not guarantee voice availability, rendering success, publication availability or later lessons. Today's lesson remains held for user review; merging these changes does not publish it.
+
+
+### Fenrir verification and cache identity
+
+Kokoro identity includes provider, voice, model contract, speed and alignment model, so a Varo file cannot be reused after the switch. Changing Fenrir speed or alignment also invalidates narration reuse. Raw normalized waveforms and measured alignment are cached by full script plus voice identity; matching retries do not resynthesize. The renderer still requires measured short captions, the 45–105 second duration budget, audio levels, layout checks and encoded opening verification.
+
+To roll back, revert the voice-switch PR; this restores the previous Varo voice/style configuration. Gemini script generation still uses `GEMINI_API_KEY`; switching speech does not remove the script provider’s requirement.

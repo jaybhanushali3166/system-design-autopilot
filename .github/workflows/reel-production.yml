@@ -110,7 +110,9 @@ jobs:
           path: |
             .autopilot/models
             ~/.cache/puppeteer
-          key: reel-models-linux-varo-tiny-en-v2-hf-0.8.198
+          key: reel-models-linux-kokoro-v1-whisper-v3-hf-0.8.198
+          restore-keys: |
+            reel-models-linux-varo-tiny-en-v2-hf-0.8.198
       - name: Restore completed narration from prior attempts
         id: progress-cache
         uses: actions/cache/restore@v4
@@ -125,9 +127,9 @@ jobs:
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/audio.json
             .autopilot/runs/${{ inputs.lesson_id }}/assets
-          key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py') }}-
+            reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-
             reel-progress-v3-${{ inputs.lesson_id }}-
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
