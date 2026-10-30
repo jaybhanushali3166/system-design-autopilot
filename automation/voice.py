@@ -36,24 +36,5 @@ def synthesize(content,project,voice='am_michael',provider='kokoro'):
   from .gemini_voice import synthesize as gemini_synthesize
   return gemini_synthesize(content,project,voice)
  if provider!='kokoro':raise ValueError('Unsupported voice provider')
- from kokoro_onnx import Kokoro
- import soundfile as sf
- model_dir=Path(os.environ.get('AUTOPILOT_MODEL_DIR',str(WORK/'models')))
- cached_file(MODEL_URL,model_dir/'kokoro-v1.0.onnx');cached_file(VOICES_URL,model_dir/'voices-v1.0.bin')
- engine=Kokoro(str(model_dir/'kokoro-v1.0.onnx'),str(model_dir/'voices-v1.0.bin'))
- assets=project/'assets';assets.mkdir(parents=True,exist_ok=True)
- scenes=[]; clips=[];cursor=0.0
- for i,scene in enumerate(content['scenes']):
-  start=cursor
-  for j,text in enumerate(utterances(scene['narration'])):
-   audio,rate=engine.create(text,voice=voice,speed=1.04,lang='en-us')
-   name=f'voice-{i:02}-{j:02}.wav';sf.write(str(assets/name),audio,rate)
-   duration=len(audio)/rate
-   clips.append({'id':f'voice-{i}-{j}','src':f'assets/{name}','text':text,'start':round(cursor,4),'duration':round(duration,4)})
-   cursor+=duration+0.09
-  cursor+=0.28
-  scenes.append({**scene,'index':i,'start':round(start,4),'duration':round(cursor-start,4)})
- if not 45<=cursor<=105: raise ValueError(f'Narration outside 45–105 second budget: {cursor:.1f}s; revise script')
- metadata={'scenes':scenes,'clips':clips,'duration':round(cursor,4),'voice':voice}
- write_json(project/'audio.json',metadata)
- return metadata
+ from .kokoro_voice import synthesize as kokoro_synthesize
+ return kokoro_synthesize(content,project,voice)
