@@ -1,0 +1,183 @@
+{
+  "caption": "A slow order search needs a query-plan check before another index. Follow one orders workload from a table scan to an index, a customer/date filter and a covering query. Indexes also need storage and write maintenance.\n\nIn PostgreSQL, index-only scans can still visit the heap when visibility checks require it. Compare representative reads and writes with EXPLAIN before keeping an index. Useful for a teammate investigating a slow query.\n#systemdesign #beyondlocalhost",
+  "cover_title": "Why Your Order Search Waits",
+  "story": {
+    "version": 3,
+    "format": "debug",
+    "example": "Order 42",
+    "opening": {
+      "subject": "FIND",
+      "outcome": "Found after scanning rows",
+      "result_at": 2.4
+    },
+    "takeaway": [
+      "Inspect the actual query plan first",
+      "Measure representative reads and index maintenance"
+    ]
+  },
+  "scenes": [
+    {
+      "title": "The search keeps looking",
+      "narration": "Your order search checks row after row before it finds order forty-two in the table.",
+      "action": "scan",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "ORDER QUERY",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "ORDERS TABLE",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "ORDER 42",
+          "value": "",
+          "tone": "green"
+        }
+      ],
+      "note": "Illustrative table scan; no timing benchmark."
+    },
+    {
+      "title": "Follow the index entry",
+      "narration": "A matching index gives this query another path: find the entry, then fetch the order record when the query needs its columns.",
+      "action": "lookup",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "ORDER 42",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "ORDER ID INDEX",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "ORDER RECORD",
+          "value": "",
+          "tone": "green"
+        }
+      ],
+      "note": "The planner chooses the actual access path."
+    },
+    {
+      "title": "Now filter this customer",
+      "narration": "Our order screen also lists one customer’s recent orders. The query filters by customer and date, then sorts the matching orders by date.",
+      "action": "lookup",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "CUSTOMER + DATE",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "QUERY PLAN",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "RECENT ORDERS",
+          "value": "",
+          "tone": "green"
+        }
+      ],
+      "note": "Keep the same orders workload, not a new app."
+    },
+    {
+      "title": "Column order shapes the path",
+      "narration": "A composite B-tree starting with customer and then date can support that pattern. Different filters and sorting can need a different index arrangement.",
+      "action": "lookup",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "CUSTOMER + DATE",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "CUSTOMER, DATE",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "MATCHING ORDERS",
+          "value": "",
+          "tone": "green"
+        }
+      ],
+      "note": "Leading equalities and the first range shape the scan."
+    },
+    {
+      "title": "Can the index answer alone?",
+      "narration": "If the index stores every needed column, an index-only scan may avoid table visits. PostgreSQL still checks visibility and sometimes fetches the table.",
+      "action": "lookup",
+      "kind": "index",
+      "nodes": [
+        {
+          "label": "NEEDED COLUMNS",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "COVERING INDEX",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "INDEX RESULT",
+          "value": "",
+          "tone": "green"
+        }
+      ],
+      "note": "Index-only scans depend on visibility, not just columns."
+    },
+    {
+      "title": "Writes maintain extra structure",
+      "narration": "Changing an indexed value also means maintaining its index entry. Extra indexes take storage and can add work to writes, so measure both paths.",
+      "action": "route",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "CHANGED VALUE",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "TABLE UPDATE",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "INDEX UPDATE",
+          "value": "",
+          "tone": "green"
+        }
+      ],
+      "note": "Update reaches the table and index; illustrative work path."
+    },
+    {
+      "title": "Check the query you run",
+      "narration": "Use EXPLAIN to inspect the chosen query plan. Test representative reads and writes before keeping an index, and send the actual query with your findings.",
+      "action": "checklist",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "QUERY",
+          "value": "",
+          "tone": "muted"
+        },
+        {
+          "label": "PLAN",
+          "value": "",
+          "tone": "muted"
+        }
+      ],
+      "note": "Check a representative workload; avoid blanket index advice."
+    }
+  ]
+}

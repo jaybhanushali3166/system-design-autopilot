@@ -12,7 +12,7 @@ export function validateResult(body, cloudName) {
   const v=body.validation;
   if (!v || !Number.isFinite(v.duration) || !Number.isFinite(v.audio_peak_db) || v.width !==1080 || v.height!==1920 || v.fps!==30 || !v.audio || v.duration<45 || v.duration>105 || v.check_passed!==true || v.audio_peak_db > -0.5) throw new Error('Video validation failed');
   if (!/^[a-f0-9]{64}$/.test(body.content_hash)) throw new Error('Invalid content hash');
-  if(v.story_contract!==2 || v.creative_review_passed!==true || !Number.isFinite(v.opening_result_seconds) || v.opening_result_seconds>3 || v.opening_result_seconds<0 || !/^[a-f0-9]{64}$/.test(v.creative_review_sha256||'') || !/^[a-f0-9]{64}$/.test(v.rendered_sha256||'')) throw new Error('Rendered story review required');
+  if(![2,3].includes(v.story_contract) || v.creative_review_passed!==true || !Number.isFinite(v.opening_result_seconds) || v.opening_result_seconds>3 || v.opening_result_seconds<0 || !/^[a-f0-9]{64}$/.test(v.creative_review_sha256||'') || !/^[a-f0-9]{64}$/.test(v.rendered_sha256||'')) throw new Error('Rendered story review required');
   if (typeof body.caption!=='string' || body.caption.length>2100) throw new Error('Invalid caption');
 }
 async function authorized(request, secret) {

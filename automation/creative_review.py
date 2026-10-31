@@ -11,6 +11,7 @@ from .story_contract import validate_story
 class CreativeReviewFailed(ValueError):pass
 
 MECHANISM_WORDS={
+ 'scan':['scan','row','table','search','check'],
  'route':['route','rout','send','forward','reach','request','service','proxy','gateway','path','connect','fetch','revalidat'],
  'block':['reject','stop','denied','check','auth','token','limit','allow','block','valid','permission','private','no-store'],
  'queue':['queue','wait','backlog','worker','work','task','buffer','arriv','drain'],
@@ -45,7 +46,7 @@ def inspect_opening(frames,width=1080,height=1920):
     return positions
 
 def check_mechanism_language(content):
-    for scene in content['scenes'][1:-1]:
+    for scene in content['scenes'][0 if content.get('story',{}).get('version')==3 else 1:-1]:
         text=(scene['narration']+' '+scene['note']).lower()
         if not any(word in text for word in MECHANISM_WORDS[scene['action']]):raise CreativeReviewFailed('Narration does not describe the selected physical action')
     all_text=' '.join(s['narration']+' '+s['note'] for s in content['scenes'])
@@ -65,14 +66,39 @@ def review_rendered(lesson,content,audio,project,content_hash):
     check_story_language(content,audio)
     video=project/'reel.mp4';video_hash=hashlib.sha256(video.read_bytes()).hexdigest();path=project/'creative-review.json'
     manifest=json.loads((project/'story-evidence.json').read_text())
-    if manifest.get('contract')!=2 or manifest.get('opening_result_seconds')!=2.4 or [s['action'] for s in manifest['scenes']]!=[s['action'] for s in content['scenes']]:raise CreativeReviewFailed('Rendered action manifest does not match the validated storyboard')
+    if manifest.get('contract')!=content['story']['version'] or manifest.get('format','legacy-compare')!=content['story'].get('format','legacy-compare') or manifest.get('opening_result_seconds')!=2.4 or [s['action'] for s in manifest['scenes']]!=[s['action'] for s in content['scenes']]:raise CreativeReviewFailed('Rendered action manifest does not match the validated storyboard')
     folder=project/'creative-frames';folder.mkdir(exist_ok=True);frames={};samples=[]
     for time in [0,1.5,3]:
         frames[time]=subprocess.check_output(['ffmpeg','-v','error','-ss',str(time),'-i',str(video),'-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','pipe:1'])
-    positions=inspect_opening(frames)
+    positions=inspect_mechanism_opening(frames,manifest.get('opening_motion')) if content['story']['version']==3 else inspect_opening(frames)
     shots=[('opening-0',0),('opening-1.5',1.5),('opening-3',3)]+[(f'beat-{s["index"]}',s['start']+s['duration']*.7) for s in audio['scenes'][1:]]
     for name,time in shots:
         target=folder/(name+'.jpg');subprocess.run(['ffmpeg','-v','error','-y','-ss',str(time),'-i',str(video),'-frames:v','1','-vf','scale=360:640','-q:v','3',str(target)],check=True)
         samples.append({'file':target.name,'time':round(time,3),'sha256':hashlib.sha256(target.read_bytes()).hexdigest()})
-    report={'contract':2,'review_type':'local_contract_and_encoded_pixel_checks','content_hash':content_hash,'rendered_sha256':video_hash,'passed':True,'opening_result_seconds':2.4,'opening_positions':positions,'checks':{'visible_inputs_at_entry':True,'encoded_consequence_by_three_seconds':True,'nonrepeated_opening_setup':True,'mechanism_action_arity':True,'narration_action_vocabulary':True,'three_actionable_diagnostics':True,'unqualified_performance_claim_scan':True},'frames':samples,'limits':'Constrained actions and local checks are not a complete semantic or human editorial review. The deployment pilot receives a separate visual review.'}
+    report={'contract':content['story']['version'],'format':content['story'].get('format','legacy-compare'),'review_type':'local_contract_and_encoded_pixel_checks','content_hash':content_hash,'rendered_sha256':video_hash,'passed':True,'opening_result_seconds':2.4,'opening_positions':positions,'checks':{'visible_inputs_at_entry':True,'encoded_consequence_by_three_seconds':True,'nonrepeated_opening_setup':True,'mechanism_action_arity':True,'narration_action_vocabulary':True,'actionable_diagnostics':len(content['story']['takeaway']),'unqualified_performance_claim_scan':True},'frames':samples,'limits':'Constrained actions and local checks are not a complete semantic or human editorial review. The deployment pilot receives a separate visual review.'}
     write_json(path,report);return report
+
+
+def inspect_mechanism_opening(frames,motion,width=1080,height=1920):
+    if set(frames)!={0,1.5,3} or not isinstance(motion,dict):raise CreativeReviewFailed('Encoded mechanism opening evidence is incomplete')
+    if motion.get('color')!=[107,78,255] or motion.get('ease')!='linear':raise CreativeReviewFailed('Opening carrier evidence is invalid')
+    points=motion.get('points',[]);start=motion.get('start');length=motion.get('length')
+    if not 2<=len(points)<=3 or not isinstance(start,(int,float)) or not isinstance(length,(int,float)) or length<=0 or start+length>2.4:raise CreativeReviewFailed('Opening must visibly advance by three seconds')
+    if any(len(point)!=2 or not 115<=point[0]<=905 or not 490<=point[1]<=1100 for point in points):raise CreativeReviewFailed('Opening carrier leaves the mechanism area')
+    if sum(abs(points[-1][j]-points[0][j]) for j in [0,1])<150:raise CreativeReviewFailed('Opening has no meaningful mechanism movement')
+    result={}
+    for time,rgb in frames.items():
+        if len(rgb)!=width*height*3:raise CreativeReviewFailed('Encoded frame dimensions are invalid')
+        progress=max(0,min(1,(time-start)/length))*(len(points)-1);segment=min(int(progress),len(points)-2);fraction=progress-segment
+        expected=[points[segment][j]+(points[segment+1][j]-points[segment][j])*fraction for j in [0,1]]
+        count=total_x=total_y=0
+        for y in range(490,min(height,1100)):
+            for x in range(115,min(width,905)):
+                at=(y*width+x)*3
+                if all(abs(rgb[at+j]-motion['color'][j])<=24 for j in range(3)):
+                    count+=1;total_x+=x;total_y+=y
+        if count<350:raise CreativeReviewFailed('Opening carrier is absent from the encoded video')
+        actual=[total_x/count,total_y/count]
+        if any(abs(actual[j]-expected[j])>22 for j in [0,1]):raise CreativeReviewFailed('Encoded opening does not follow the storyboard mechanism')
+        result[str(time)]={'x':round(actual[0],2),'y':round(actual[1],2),'pixels':count,'expected':expected}
+    return result

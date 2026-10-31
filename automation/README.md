@@ -161,9 +161,11 @@ For an already active queue, preview an update with `python -m automation.resche
 
 ## Story correction v2 — 27 October 2026
 
-Future Gemini scripts use eight short beats around one concrete example. A physical two-path contrast is visible at entry and its consequence lands at 2.4 seconds. Beat two advances the input instead of restating the problem. Supported mechanism actions have explicit endpoint counts and finite connected paths: routing, filtering, queuing, fanout, replication, lookup, cache hit/miss and retry. The close contains three actionable diagnostic checks. The light palette, dark series covers, daily 11 AM IST slot and English Varo voice remain unchanged.
+From lesson 12 onward, generated scripts use story v3: six to eight beats around one worked input, a trusted per-lesson debugging/prediction/trade-off storyboard, an observable mechanism at entry, and one or two useful ending checks. `storyboards.json` specifies distinct premises for lessons 12–17; later lessons rotate formats within their curriculum scope. The first frame is no longer forced into a two-lane race. First-stage rollout retains the 45–105-second safety budget, Fenrir, light palette, dark covers and 11 AM IST schedule. Short 25–35-second episodes remain a separate future duration test.
 
-Local validation rejects the former generic schema, repeated opening wording, long setup, missing/overlong diagnostics and unsupported action geometry. A script gets at most one correction before narration. After rendering, the gate decodes the actual 0/1.5/3-second frames and measures the two packet positions: both must exist at entry, one must stop at its boundary and the other must arrive by three seconds. The Worker rejects a result without story-v2 evidence and a passing review tied to the encoded file hash. This is constrained deterministic QA, not a claim of human-level semantic judgment or guaranteed reach. The deployment pilot also gets a visual review.
+Earlier reviewed v2 films remain valid. For v3, the renderer records the exact colored carrier path, and the encoded-frame gate checks its actual position at 0, 1.5 and 3 seconds; absent or static carriers fail. Arity, narration/action language, no repeated setup, caption alignment, audio and browser validation still apply. The Worker accepts only reviewed v2/v3 outputs tied to the encoded file hash. These constrained checks do not claim human-level editorial judgment or guaranteed reach.
+
+The selected trusted storyboard is part of script provenance, so a changed plan invalidates stale script reuse. Each job retains its plan and final STORYBOARD.md alongside the actual Insights snapshot. Lesson 12 has an explicitly reviewed hash-pinned script fallback; later lessons still need successful Gemini generation unless separately reviewed.
 
 Rendered frames stay on the runner and in the existing GitHub review artifact. No new image-review API is used. `creative-review.json`, `story-evidence.json`, `STORYBOARD.md`, `SPEC.md`, `script-attempts.json` and `creative-frames/` make the creative evidence inspectable alongside technical checks.
 
@@ -194,3 +196,8 @@ The current reviewed buffer enables hash-pinned fallbacks only for lessons 10 an
 Kokoro identity includes provider, voice, model contract, speed and alignment model, so a Varo file cannot be reused after the switch. Changing Fenrir speed or alignment also invalidates narration reuse. Raw normalized waveforms and measured alignment are cached by full script plus voice identity; matching retries do not resynthesize. The renderer still requires measured short captions, the 45–105 second duration budget, audio levels, layout checks and encoded opening verification.
 
 To roll back, revert the voice-switch PR; this restores the previous Varo voice/style configuration. Gemini script generation still uses `GEMINI_API_KEY`; switching speech does not remove the script provider’s requirement.
+
+
+### Storyboard research, 1 November 2026
+
+The opening test addresses a recent five-reel median skip rate of 76.4% and average watch time of 3.912 seconds at unequal ages. These are provisional descriptive observations, not causal winner claims. Keep posting time/voice/theme stable; compare actual 24-hour, 72-hour and seven-day snapshots. Record per-reach likes, saves and shares with raw counts. Competitor public likes are not retention or share-rate benchmarks.
