@@ -10,6 +10,7 @@ from .creative_feedback import fetch_feedback,policy
 from .story_contract import validate_story
 from .creative_review import review_rendered,CreativeReviewFailed
 from .gemini_http import GeminiRequestError
+from .elevenlabs_voice import ElevenLabsRequestError
 from .voice import synthesize
 from .gemini_voice import identity as voice_identity
 from .render import build,identity as render_identity
@@ -92,6 +93,14 @@ def lesson_content(lesson, provider, project, resume):
  write_json(project/'content.json',content)
  return content
 
+def publication_caption(content):
+ caption=content['caption'];credit=config().get('voice_attribution','')
+ if credit:
+  if config().get('voice_provider')!='elevenlabs' or credit not in ['Voice: elevenlabs.io','Voice: 11.ai']:raise ValueError('Invalid voice attribution configuration')
+  if not caption.startswith(credit+'\n'):caption=credit+'\n\n'+caption
+ if len(caption)>2100:raise ValueError('Publication caption exceeds platform budget')
+ return caption
+
 def refresh_scene_metadata(content,audio):
  # Narration reuse must not freeze old titles, nodes, notes or action choices.
  measured=audio['scenes']
@@ -137,7 +146,7 @@ def run(args):
   midpoint=scene['start']+scene['duration']*.65
   subprocess.run(['ffmpeg','-y','-v','error','-ss',str(midpoint),'-i',str(project/'reel.mp4'),'-frames:v','1',str(project/f'review-{scene["index"]}.png')],check=True)
  result={'lesson_id':lesson['id'],'job_token':args.job_token,'content_hash':hash_value,
-         'validation':validate,'voice_profile':voice_profile,'cover':cover_metadata,'caption':content['caption'],'dry_run':args.dry_run,
+         'validation':validate,'voice_profile':voice_profile,'cover':cover_metadata,'caption':publication_caption(content),'dry_run':args.dry_run,
          'run_id':os.environ.get('GITHUB_RUN_ID','local'),'video_url':None,'cover_url':None}
  write_json(project/'result.json',result)
  if args.upload:
@@ -154,7 +163,7 @@ if __name__=='__main__':
  parser.add_argument('--job-token',default='');parser.add_argument('--worker-url',default='');args=parser.parse_args()
  try:run(args)
  except Exception as exc:
-  diagnostic=exc.diagnostic() if isinstance(exc,GeminiRequestError) else {'type':type(exc).__name__}
+  diagnostic=exc.diagnostic() if isinstance(exc,(GeminiRequestError,ElevenLabsRequestError)) else {'type':type(exc).__name__}
   diagnostic['stage']=CURRENT_STAGE
   if isinstance(exc,CreativeReviewFailed):diagnostic['reason']='Local rendered-story gate rejected this candidate; inspect the review evidence'
   safe_audio_errors={'Invalid measured word times','Nonmonotonic measured word times','Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption','Scene text missing from continuous script','Nonmonotonic scene timings','Nonmonotonic caption timings','Continuous narration outside 45–105 second budget'}
@@ -164,7 +173,7 @@ if __name__=='__main__':
    write_json(WORK/'runs'/args.lesson/'generation-error.json',diagnostic)
   if args.worker_url and args.job_token:
    try:callback(args.worker_url,{'lesson_id':args.lesson,'job_token':args.job_token,'error':True,
-    **({'retry_at':exc.retry_at} if isinstance(exc,GeminiRequestError) and exc.retry_at else {})})
+    **({'retry_at':exc.retry_at} if isinstance(exc,(GeminiRequestError,ElevenLabsRequestError)) and exc.retry_at else {})})
    except Exception:pass
   print('Production diagnostic: '+json.dumps(diagnostic))
   # Provider libraries can include credential-bearing URLs in exceptions. Keep console errors generic.

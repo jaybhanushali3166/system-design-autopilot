@@ -35,6 +35,9 @@ def synthesize(content,project,voice='am_michael',provider='kokoro'):
  if provider=='gemini':
   from .gemini_voice import synthesize as gemini_synthesize
   return gemini_synthesize(content,project,voice)
+ if provider=='elevenlabs':
+  from .elevenlabs_voice import synthesize as elevenlabs_synthesize
+  return elevenlabs_synthesize(content,project,voice)
  if provider!='kokoro':raise ValueError('Unsupported voice provider')
  from .kokoro_voice import synthesize as kokoro_synthesize
  return kokoro_synthesize(content,project,voice)
