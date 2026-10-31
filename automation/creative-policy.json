@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-27-v2",
+  "version": "2026-11-01-storyboards",
   "video_theme": "light-workshop",
   "cover_theme": "dark-series",
   "word_target": [
@@ -7,13 +7,15 @@
     175
   ],
   "principles": [
-    "Demonstrate the consequence with the same input on two paths by 2.4 seconds; do not repeat the problem in beat two.",
+    "Open on a concrete consequence using a topic-specific mechanism; show an observable result by three seconds. Do not force every opening into two lanes.",
     "Follow one worked example through one mechanism. Explain technical terms after their visible purpose.",
     "Reveal a useful consequence in the opening teaching beat. Avoid reading a list.",
     "One main idea per scene; a production caveat that actually explains the trade-off.",
     "End with one practical reference, diagnostic checklist or reusable calculation.",
-    "Use natural connected English Varo narration and short captions. No invented benchmarks or company architecture.",
-    "Keep curriculum order and scope; use metrics as descriptive evidence, never a causal winner or a guarantee of reach."
+    "Use natural curious connected English, the configured voice, short phrase captions and clear space between visuals and subtitles. No invented benchmarks or company architecture.",
+    "Keep curriculum order and scope; use metrics as descriptive evidence, never a causal winner or a guarantee of reach.",
+    "Choose a debugging story, prediction or trade-off; vary premise, composition and ending rather than swapping script text in the same film.",
+    "Make the useful result clear before a contextual save/share prompt; avoid generic engagement bait."
   ],
   "baseline_snapshot": {
     "date": "2026-10-25",
@@ -37,16 +39,22 @@
     ]
   },
   "story_contract": {
-    "version": 2,
+    "version": 3,
     "opening_result_seconds": 2.4,
-    "beats": 8,
+    "beats": [
+      6,
+      8
+    ],
     "rendered_creative_review_required": true,
     "same_example_throughout": true,
-    "takeaway_checks": 3
+    "takeaway_checks": [
+      1,
+      2
+    ]
   },
   "approved_reference": {
     "lesson": "lesson-06",
-    "retain": "Two visible states of the same input; an observable consequence within three seconds; one evolving physical example; useful closing checks.",
+    "retain": "Early clarity, one evolving example and practical utility; do not copy the exact two-lane composition.",
     "transfer_form_only": "Keep the current curriculum topic. Do not repeat the reference episode or a successful older topic.",
     "not_sufficient": "Palette, voice, readable cards and prompt instructions alone do not reproduce the approved story."
   },
@@ -66,5 +74,12 @@
       "saved": 0
     },
     "finding": "Unequal-age directional evidence, not causal proof. Lesson 07 delayed its first solution until 23.3 seconds and repeated setup."
+  },
+  "research_2026_11_01": {
+    "sample_reels": 18,
+    "median_skip_rate_pct": 74.9,
+    "recent_five_median_skip_rate_pct": 76.4,
+    "recent_five_median_watch_seconds": 3.912,
+    "limits": "Unequal post ages, tiny interaction counts, no causal winner. Test openings before duration/voice/theme changes."
   }
 }

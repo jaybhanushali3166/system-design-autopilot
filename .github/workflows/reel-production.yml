@@ -127,9 +127,9 @@ jobs:
             .autopilot/runs/${{ inputs.lesson_id }}/alignment-*.json
             .autopilot/runs/${{ inputs.lesson_id }}/audio.json
             .autopilot/runs/${{ inputs.lesson_id }}/assets
-          key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/storyboards.py', 'automation/storyboards.json', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-
+            reel-progress-v3-${{ inputs.lesson_id }}-${{ hashFiles('automation/config.json', 'automation/content.py', 'automation/creative-policy.json', 'automation/story_contract.py', 'automation/storyboards.py', 'automation/storyboards.json', 'automation/gemini_voice.py', 'automation/voice.py', 'automation/kokoro_voice.py', 'automation/alignment.py') }}-
             reel-progress-v3-${{ inputs.lesson_id }}-
       - name: Validate and produce (no Instagram credentials on this runner)
         run: |
@@ -173,6 +173,7 @@ jobs:
             .autopilot/runs/**/creative-frames/*.jpg
             .autopilot/runs/**/story-evidence.json
             .autopilot/runs/**/STORYBOARD.md
+            .autopilot/runs/**/storyboard-plan.json
             .autopilot/runs/**/SPEC.md
             .autopilot/runs/**/check.json
             .autopilot/runs/**/content.json

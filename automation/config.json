@@ -31,10 +31,11 @@
   "alignment_model": "tiny.en",
   "video_theme": "light-workshop",
   "cover_theme": "dark-series",
-  "creative_policy_version": "2026-10-27-v2",
+  "creative_policy_version": "2026-11-01-storyboards",
   "reviewed_script_fallbacks": {
     "lesson-10": "2b0c27f0ff4b3dc670ce595e4dde959d1e8600fca27b81409bd06c6c6187ebaf",
-    "lesson-11": "3121d23d27a7050e84e6f876cba3e29671002b6c6bb21baa65bfaba1db416e5c"
+    "lesson-11": "3121d23d27a7050e84e6f876cba3e29671002b6c6bb21baa65bfaba1db416e5c",
+    "lesson-12": "99d1843b1550b485eb309cb85e34dd213a3c54b3ae0e96486f6664de5d236e4d"
   },
   "voice_speed": 1.0
 }

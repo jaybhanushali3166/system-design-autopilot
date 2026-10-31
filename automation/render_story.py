@@ -13,17 +13,25 @@ CSS='''
 def build_story(lesson,content,audio,project):
     story=validate_story(content);assets=project/'assets';assets.mkdir(parents=True,exist_ok=True);folder=project/'compositions';folder.mkdir(exist_ok=True)
     for source,name in [('node_modules/gsap/dist/gsap.min.js','gsap.min.js'),*[(f'node_modules/@fontsource/inter/files/inter-latin-{w}-normal.woff2',f'inter{w}.woff2') for w in [400,700,900]],('automation/assets/bed.mp3','bed.mp3'),('automation/assets/pop.mp3','pop.mp3')]:shutil.copy2(ROOT/source,assets/name)
-    hosts=[];evidence=[]
+    hosts=[];evidence=[];opening_motion=None
     for scene in audio['scenes']:
         i=scene['index'];sid=f'story-{i}';duration=scene['duration'];action=scene['action'];anim=[]
+        new_opening=story['version']==3 and i==0
+        if new_opening and duration<3.1:raise ValueError('Opening narration must leave time for the demonstrated result')
         body=[f'<div class="ground"></div><div class="module">{e(lesson["series_title"].upper())} · LESSON {lesson["number"]:02}</div><h1 class="title">{e(scene["title"])}</h1><div class="example">{e(story["example"])}</div>']
         visual=[]
+        if new_opening:
+            body=[f'<div class="ground"></div><div class="module">BEYOND LOCALHOST</div><h1 class="title">{e(scene["title"])}</h1>']
         def packet(name,points,start,length=.9,visible=True,color='#F9D66B',initial=False):
+            nonlocal opening_motion
+            if new_opening:
+                initial=True;visible=True;color='#6B4EFF'
+                opening_motion={'color':[107,78,255],'points':[[x+115,y+490] for x,y in points],'start':start,'length':length,'ease':'linear'}
             pid=f'{sid}-{name}';x,y=points[0]
             visual.append(f'<div id="{pid}" class="payload" data-layout-allow-overlap style="background:{color};opacity:{1 if initial else 0};left:{x-32}px;top:{y-21}px">{e(story["opening"]["subject"])}</div>')
             anim.append(f'tl.to("#{pid}",{{opacity:1,duration:.08}},{start:.3f});')
             step=length/(len(points)-1)
-            for n,(u,v) in enumerate(points[1:]):anim.append(f'tl.to("#{pid}",{{x:{u-x},y:{v-y},duration:{step:.3f},ease:"power2.inOut"}},{start+n*step:.3f});')
+            for n,(u,v) in enumerate(points[1:]):anim.append(f'tl.to("#{pid}",{{x:{u-x},y:{v-y},duration:{step:.3f},ease:"{"none" if new_opening else "power2.inOut"}"}},{start+n*step:.3f});')
             if not visible:anim.append(f'tl.to("#{pid}",{{opacity:0,duration:.15}},{start+length:.3f});')
         if action=='compare':
             opening=story['opening'];result_at=opening['result_at']
@@ -38,8 +46,8 @@ def build_story(lesson,content,audio,project):
                 anim.append(f'tl.to("#{sid}-result-{lane}",{{opacity:1,duration:.12}},{result_at:.3f});')
             evidence.append({'scene':i,'action':action,'result_at':2.4,'proof':'one packet stops at the physical boundary; the other reaches its endpoint'})
         elif action=='checklist':
-            for j,line in enumerate(story['takeaway']):visual.append(f'<div class="check" style="top:{70+j*135}px"><b>0{j+1}</b>{e(line)}</div>')
-            visual.append(f'<div class="stamp" style="opacity:1">Use the same request. Check one stage at a time.</div>')
+            for j,line in enumerate(story['takeaway']):visual.append(f'<div class="check" style="top:{70+j*160}px"><b>0{j+1}</b>{e(line)}</div>')
+            if story['version']==2:visual.append(f'<div class="stamp" style="opacity:1">Use the same request. Check one stage at a time.</div>')
             evidence.append({'scene':i,'action':action,'checks':story['takeaway']})
         else:
             points=[(100,290),(395,290),(690,290)]
@@ -56,13 +64,20 @@ def build_story(lesson,content,audio,project):
             for j,(node,(x,y)) in enumerate(zip(scene['nodes'],points)):
                 tone={'cyan':'#F9D66B','green':'#B4D5BD','red':'#F3BCAB','muted':'#F7F8F0'}[node['tone']]
                 visual.append(f'<div id="{sid}-endpoint-{j}" class="endpoint" style="left:{x-100}px;top:{y-105}px;background:{tone}"><strong>{e(node["label"])}</strong><small>{e(node["value"])}</small></div>')
-            if action=='block':
+            if action=='scan':
+                # Distinct table rows are data, not interchangeable concept cards.
+                visual=[f'<div class="lane-label" style="top:0">{e(scene["nodes"][0]["label"])}</div>']
+                for row in range(8):
+                    shade='#B4D5BD' if row==6 else '#F7F8F0'
+                    visual.append(f'<div style="position:absolute;left:190px;top:{65+row*58}px;width:550px;height:47px;border:2px solid #18332C;background:{shade};padding:7px 16px;font:700 25px Inter">{e(scene["nodes"][2]["label"]) if row==6 else "ROW"}</div>')
+                packet('scan',[(100,88),(100,436)],.2,2.0)
+            elif action=='block':
                 visual.append(f'<div class="barrier" style="left:320px;top:175px"></div>');packet('blocked',[points[0],(285,290)],.5,1.4,color='#F3BCAB')
             elif action=='queue':
                 for j in range(4):
                     visual.append(f'<div id="{sid}-work-{j}" class="work" style="left:{285+j*53}px;top:160px;opacity:0"></div>')
                     anim.append(f'tl.to("#{sid}-work-{j}",{{opacity:1,duration:.15}},{.4+j*.25:.3f});')
-                anim.append(f'tl.to("#{sid}-work-0",{{x:345,y:109,opacity:0,duration:1.1,ease:"power2.inOut"}},2);')
+                anim.append(f'tl.to("#{sid}-work-0",{{x:345,y:109,opacity:0,duration:1.1,ease:"{"none" if new_opening else "power2.inOut"}"}},2);')
                 packet('produced',[points[0],points[1]],.25,.9,visible=False)
             elif action in ['fanout','select','replicate']:
                 packet('request',[points[0],points[1]],.4,.8,visible=False)
@@ -77,9 +92,14 @@ def build_story(lesson,content,audio,project):
                 packet('attempt-1',[points[0],points[1],points[0]],.4,1.7,visible=False,color='#F3BCAB')
                 packet('attempt-2',points,2.6,2.0,visible=False,color='#B4D5BD')
             else:packet('routed',points,.4,2.0,visible=False,color='#B4D5BD')
-            visual.append(f'<div id="{sid}-stamp" class="stamp">{e(scene["note"])}</div>');anim.append(f'tl.to("#{sid}-stamp",{{opacity:1,duration:.2}},3);')
+            if not new_opening:
+                visual.append(f'<div id="{sid}-stamp" class="stamp">{e(scene["note"])}</div>');anim.append(f'tl.to("#{sid}-stamp",{{opacity:1,duration:.2}},3);')
             evidence.append({'scene':i,'action':action,'edges':edges,'example':story['example']})
         body.append('<div class="stage">'+''.join(visual)+'</div>')
+        if new_opening:
+            outcome=story['opening']['outcome']
+            body.append(f'<div id="{sid}-outcome" style="position:absolute;left:115px;top:1140px;width:790px;font:700 40px/1.15 Inter;opacity:0">{e(outcome)}</div>')
+            anim.append(f'tl.to("#{sid}-outcome",{{opacity:1,duration:.12}},2.4);')
         if action=='compare':body.append(f'<div class="note">{e(scene["note"])}</div>')
         text=f'<template><style>{CSS}</style><div id="root" data-composition-id="{sid}" data-start="0" data-duration="{duration}" data-width="1080" data-height="1920">'+''.join(body)+'</div><script>(()=>{const tl=gsap.timeline({paused:true});'+''.join(anim)+f'window.__timelines["{sid}"]=tl;}})();</script></template>'
         (folder/f'{sid}.html').write_text(text)
@@ -100,9 +120,9 @@ def build_story(lesson,content,audio,project):
         length=min(58.64,duration-start);hosts.append(f'<audio id="bed-{j}" class="clip" src="assets/bed.mp3" data-start="{start}" data-duration="{length}" data-track-index="4" data-volume="0.09" data-fade-in="0.2" data-fade-out="{min(1.2,length/2)}"></audio>');start+=length;j+=1
     hosts.append('<audio id="payoff-pop" class="clip" src="assets/pop.mp3" data-start="2.4" data-duration="0.7" data-track-index="5" data-volume="0.12"></audio>')
     (project/'index.html').write_text(f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{e(lesson["title"])}</title><script src="assets/gsap.min.js"></script><style>html,body{{margin:0;background:#EAF0E6;overflow:hidden}}#root{{position:relative;width:100%;height:100%;background:#EAF0E6;overflow:hidden}}.clip{{position:absolute;inset:0}}</style></head><body><div id="root" data-composition-id="main" data-start="0" data-duration="{duration}" data-width="1080" data-height="1920" data-fps="30">'+''.join(hosts)+'</div><script>window.__timelines["main"]=gsap.timeline({paused:true});</script></body></html>')
-    (project/'captions.srt').write_text('\n'.join(srt));write_json(project/'story-evidence.json',{'contract':2,'opening_result_seconds':2.4,'scenes':evidence})
-    write_json(project/'hyperframes.json',{'paths':{'assets':'assets'},'creativePolicy':'2026-10-27-v2'})
+    (project/'captions.srt').write_text('\n'.join(srt));write_json(project/'story-evidence.json',{'contract':story['version'],'format':story.get('format','legacy-compare'),'opening_result_seconds':2.4,'opening_motion':opening_motion,'scenes':evidence})
+    write_json(project/'hyperframes.json',{'paths':{'assets':'assets'},'creativePolicy':config().get('creative_policy_version')})
     (project/'SCRIPT.md').write_text('# '+lesson['title']+'\n\n'+'\n\n'.join(s['narration'] for s in content['scenes']))
-    (project/'STORYBOARD.md').write_text('# One example: '+story['example']+'\n\n'+'\n\n'.join(f'{s["start"]:.2f}s · {s["action"]} · {s["title"]}\n{s["narration"]}' for s in audio['scenes']))
-    (project/'SPEC.md').write_text('1080×1920 at 30fps. Light workshop, dark series cover, English Varo. Opening consequence: 2.4s.\n\nBANNED: repeated problem setup, arbitrary card grids, decorative/disconnected arrows, fabricated benchmarks.\n')
+    (project/'STORYBOARD.md').write_text('# '+story.get('format','legacy-compare')+' · One example: '+story['example']+'\n\n'+'\n\n'.join(f'{s["start"]:.2f}s · {s["action"]} · {s["title"]}\n{s["narration"]}' for s in audio['scenes']))
+    (project/'SPEC.md').write_text('1080×1920 at 30fps. Light workshop, dark series cover, configured English voice. Opening consequence: 2.4s.\n\nBANNED: repeated problem setup, arbitrary card grids, decorative/disconnected arrows, fabricated benchmarks.\n')
     return project
