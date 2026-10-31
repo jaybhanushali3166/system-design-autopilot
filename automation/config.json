@@ -38,5 +38,6 @@
   },
   "voice_speed": 1.0,
   "voice_name": "Adam - Dominant, Firm",
-  "voice_model": "eleven_flash_v2_5"
+  "voice_model": "eleven_flash_v2_5",
+  "voice_attribution": "Voice: elevenlabs.io"
 }
