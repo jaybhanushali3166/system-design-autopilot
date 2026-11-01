@@ -194,3 +194,10 @@ The current reviewed buffer enables hash-pinned fallbacks only for lessons 10 an
 Kokoro identity includes provider, voice, model contract, speed and alignment model, so a Varo file cannot be reused after the switch. Changing Fenrir speed or alignment also invalidates narration reuse. Raw normalized waveforms and measured alignment are cached by full script plus voice identity; matching retries do not resynthesize. The renderer still requires measured short captions, the 45–105 second duration budget, audio levels, layout checks and encoded opening verification.
 
 To roll back, revert the voice-switch PR; this restores the previous Varo voice/style configuration. Gemini script generation still uses `GEMINI_API_KEY`; switching speech does not remove the script provider’s requirement.
+
+
+### Scheduled narration — 1 November 2026
+
+The user approved the Gemini Varo draft and selected the same voice for subsequent scheduled reels. The configured voice is `en-us-varo`, model `gemini-3.8-flash-tts`, using one continuous narration request with measured short captions. Voice retries are spaced at least90 seconds and retain quota-aware backoff/daily deferral. No automatic voice substitution is enabled. A Gemini app subscription does not itself establish API quota; use the API project's billing and rate limits.
+
+The receiver accepts reviewed story v2 and v3 artifacts with the existing duration/audio/browser/review/hash checks. This permits the exact approved manual lesson12 release; it does not activate the separate unfinished storyboard-generation PR. Daily11 AM IST and remaining lesson dates are unchanged.
