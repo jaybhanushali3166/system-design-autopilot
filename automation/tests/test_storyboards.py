@@ -38,11 +38,15 @@ class StoryboardTests(unittest.TestCase):
     html=(p/'compositions/story-0.html').read_text();self.assertNotIn('lane-reason',html.split('</style>')[1]);self.assertIn('Found after scanning rows',html)
     self.assertIn('class="cap"',(p/'compositions/captions.html').read_text())
  def test_generated_content_uses_the_selected_plan_and_schema(self):
-  c=candidate();response={'candidates':[{'content':{'parts':[{'text':json.dumps(c)}]}}]}
+  c=candidate();c['scenes'][0]['narration']='An overly long unreviewed opening sentence that should be replaced by our trusted editorial hook before any speech is generated.';response={'candidates':[{'content':{'parts':[{'text':json.dumps(c)}]}}]}
   with patch.dict('os.environ',{'GEMINI_API_KEY':'test-only'}),patch('automation.content.post',return_value=response) as post:
-   self.assertEqual(generate({'id':'lesson-12'})['story']['format'],'debug')
-   payload=post.call_args.kwargs['payload'];self.assertEqual(payload['generationConfig']['responseJsonSchema'],STORY_SCHEMA)
+   result=generate({'id':'lesson-12'});self.assertEqual(result['story']['format'],'debug');self.assertEqual(result['scenes'][0]['narration'],storyboard_plan({'id':'lesson-12'})['hook'])
+   payload=post.call_args.kwargs['payload'];self.assertEqual(payload['generationConfig']['responseJsonSchema']['properties']['scenes']['minItems'],7)
    self.assertIn('TRUSTED STORYBOARD PLAN',payload['contents'][0]['parts'][0]['text'])
+   variants=payload['generationConfig']['responseJsonSchema']['properties']['scenes']['items']['anyOf']
+   selected=next(v for v in variants if 'select' in v['properties']['action']['enum'])
+   self.assertEqual(selected['properties']['nodes']['minItems'],4)
+   self.assertEqual(selected['properties']['nodes']['maxItems'],4)
   c['story']['format']='prediction';response['candidates'][0]['content']['parts'][0]['text']=json.dumps(c)
   with patch.dict('os.environ',{'GEMINI_API_KEY':'test-only'}),patch('automation.content.post',return_value=response):
    with self.assertRaisesRegex(ValueError,'selected storyboard'):generate({'id':'lesson-12'})

@@ -67,7 +67,7 @@
     {
       "title": "Now filter this customer",
       "narration": "Our order screen also lists one customer’s recent orders. The query filters by customer and date, then sorts the matching orders by date.",
-      "action": "lookup",
+      "action": "scan",
       "kind": "index",
       "nodes": [
         {
@@ -76,7 +76,7 @@
           "tone": "muted"
         },
         {
-          "label": "QUERY PLAN",
+          "label": "ORDERS TABLE",
           "value": "",
           "tone": "muted"
         },
@@ -86,7 +86,7 @@
           "tone": "green"
         }
       ],
-      "note": "Keep the same orders workload, not a new app."
+      "note": "Scan the orders matching this customer and date."
     },
     {
       "title": "Column order shapes the path",
@@ -110,7 +110,7 @@
           "tone": "green"
         }
       ],
-      "note": "Leading equalities and the first range shape the scan."
+      "note": "Match the index order to the query."
     },
     {
       "title": "Can the index answer alone?",
@@ -134,7 +134,7 @@
           "tone": "green"
         }
       ],
-      "note": "Index-only scans depend on visibility, not just columns."
+      "note": "Covered columns can help; visibility still matters."
     },
     {
       "title": "Writes maintain extra structure",

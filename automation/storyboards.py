@@ -11,7 +11,7 @@ def storyboard_plan(lesson):
  if lesson['id'] in plans['lessons']:return plans['lessons'][lesson['id']]
  style=FORMATS[(number-12)%len(FORMATS)]
  return {'format':style,
-         'hook':lesson.get('hook','Show one concrete consequence immediately'),
+         'opening_brief':lesson.get('hook','Show one concrete consequence immediately'),
          'visual':'Choose a supported opening action that actually depicts this topic, not an unrelated failure. One evolving input; show a failure, prediction or trade-off appropriate to this topic. Avoid the repeated two-lane race.',
          'recipient':'A developer facing the problem in this curriculum packet',
          'ending':'One or two practical checks someone can apply later'}

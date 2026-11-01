@@ -39,18 +39,29 @@ STORY_SCHEMA['properties']['story']={'type':'object','properties':{
  'example':{'type':'string','maxLength':24},
  'opening':{'type':'object','properties':{'subject':{'type':'string','maxLength':6},'outcome':{'type':'string','maxLength':40},'result_at':{'type':'number','enum':[2.4]}},'required':['subject','outcome','result_at'],'additionalProperties':False},
  'takeaway':{'type':'array','minItems':1,'maxItems':2,'items':{'type':'string','maxLength':66}}},'required':['version','format','example','opening','takeaway'],'additionalProperties':False}
-STORY_SCHEMA['properties']['scenes'].update(minItems=6,maxItems=8)
+STORY_SCHEMA['properties']['scenes'].update(minItems=7,maxItems=8)
 STORY_SCHEMA['properties']['scenes']['items']['properties']['action']['enum']=[x for x in ACTIONS if x!='compare']
+
+# Group by physical endpoint count so invalid diagrams cannot consume the correction attempt.
+scene_schema=STORY_SCHEMA['properties']['scenes']['items']
+variants=[]
+for count in [3,4]:
+ variant=copy.deepcopy(scene_schema)
+ variant['properties']['action']['enum']=[a for a in ACTIONS if a!='compare' and (a in ['fanout','select','replicate','cache-hit','cache-miss'])==(count==4)]
+ variant['properties']['nodes'].update(minItems=count,maxItems=count)
+ variants.append(variant)
+STORY_SCHEMA['properties']['scenes']['items']={'anyOf':variants}
+
 
 def storyboard_prompt(lesson,feedback,plan):
  return """Create an English vertical system-design debugging story. Return JSON only, story.version=3.
-Follow the TRUSTED STORYBOARD PLAN below, including format and opening_action. Curriculum bounds the facts.
-Use SIX to EIGHT beats around ONE specific input; vary composition through real mechanism actions.
+Follow the TRUSTED STORYBOARD PLAN below, including format and opening_action. When a hook is supplied it is the fixed first spoken line; do not rephrase it. Curriculum bounds the facts.
+Use SEVEN or EIGHT beats around ONE specific input; vary composition through real mechanism actions.
 The first frame already shows the input and the problem. First spoken line is 8–18 words, a concrete observable consequence, not a course introduction or terminology definition.
 opening.subject is a physical carrier label of at most 6 characters; opening.outcome is the visible result, at most 40 characters; result_at=2.4. Do not use the legacy two-lane compare opening.
 Beat two advances the same example. Middle beats demonstrate one cause/effect each. Explain purpose before jargon.
 Show one relevant boundary or trade-off before the ending. Last beat action=checklist, with ONE or TWO takeaway checks, each 4–10 words, at most 66 characters, beginning with Check, Compare, Inspect, Trace, Measure, Test, Record, Verify, Watch, Limit, Set, Find, Confirm, Separate, Count, Review, Choose, Log, Keep or Ask.
-Target 145–165 spoken words overall, never below 130 or above 190. Count the total before returning: a six-beat film needs roughly 25 words in every later beat; prefer seven or eight beats for a complex curriculum packet. Each beat 8–28 words. Do not pad a repeated setup to meet length. Use natural curious English with one small relevant playful observation if it helps.
+Target 145–165 spoken words overall, never below 130 or above 190. Count before returning. For seven beats, use 12–18 opening words and 22–26 words in each later beat. For eight beats, use 12–18 opening words and 19–22 words in each later beat. Avoid short fragments that put the whole script below budget. Each beat 8–28 words. Do not pad a repeated setup to meet length. Use natural curious English with one small relevant playful observation if it helps.
 Keep titles <=44 characters, node labels <=18, node values <=24, notes <=80. One reading task per beat. Additional details belong in the caption.
 Actions and exact node counts:
 scan: 3 nodes: query, table, matching row. A cursor inspects table rows. Explain a full scan, not an index.
@@ -198,7 +209,12 @@ reels are >=72h observations, also unequal ages unless explicitly matched. No fa
 Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})+'\nPacket: '+json.dumps(lesson)
  plan=storyboard_plan(lesson)
  if plan:prompt=storyboard_prompt(lesson,feedback,plan)
- generation_config={'responseMimeType':'application/json','responseJsonSchema':STORY_SCHEMA if plan else SCHEMA,'temperature':0.3}
+ selected_schema=copy.deepcopy(STORY_SCHEMA if plan else SCHEMA)
+ if plan:
+  count=plan.get('beat_count',7)
+  selected_schema['properties']['scenes'].update(minItems=count,maxItems=count)
+  prompt+=f'\nThis lesson needs exactly {count} beats. Verify the 145–165 total spoken words before returning.'
+ generation_config={'responseMimeType':'application/json','responseJsonSchema':selected_schema,'temperature':0.3}
  # The selected Gemini 3 Flash supports low-latency thinking; do not apply its enum to other models.
  if model in ['gemini-3-flash-preview','gemini-3-flash']:
   generation_config.update(temperature=1.0,thinkingConfig={'thinkingLevel':'minimal'},maxOutputTokens=8192)
@@ -236,7 +252,10 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   text=''.join(p.get('text','') for p in parts if not p.get('thought'))
   candidate=None
   try:
-   candidate=json.loads(text);result=validate(candidate);validate_story(result)
+   candidate=json.loads(text)
+   # Curated opening copy is already reviewed; do not spend a correction rephrasing it.
+   if plan and plan.get('hook') and isinstance(candidate,dict) and isinstance(candidate.get('scenes'),list) and candidate['scenes'] and isinstance(candidate['scenes'][0],dict):candidate['scenes'][0]['narration']=plan['hook']
+   result=validate(candidate);validate_story(result)
    if plan and (result['story'].get('version')!=3 or result['story'].get('format')!=plan['format'] or (plan.get('opening_action') and result['scenes'][0]['action']!=plan['opening_action'])):raise ValueError('Generated story must follow the selected storyboard format and opening action')
   except (ValueError,KeyError,TypeError) as error:
    attempts.append({'attempt':len(attempts)+1,'valid':False,'local_rule':correction_feedback(candidate,error),'candidate':candidate})
