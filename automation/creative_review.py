@@ -46,9 +46,10 @@ def inspect_opening(frames,width=1080,height=1920):
     return positions
 
 def check_mechanism_language(content):
-    for scene in content['scenes'][0 if content.get('story',{}).get('version')==3 else 1:-1]:
+    start=0 if content.get('story',{}).get('version')==3 else 1
+    for index,scene in enumerate(content['scenes'][start:-1],start+1):
         text=(scene['narration']+' '+scene['note']).lower()
-        if not any(word in text for word in MECHANISM_WORDS[scene['action']]):raise CreativeReviewFailed('Narration does not describe the selected physical action')
+        if not any(word in text for word in MECHANISM_WORDS[scene['action']]):raise CreativeReviewFailed(f'Scene {index}: {scene["action"]} narration does not describe its physical action; rewrite this beat or choose the matching action')
     all_text=' '.join(s['narration']+' '+s['note'] for s in content['scenes'])
     if re.search(r'\b(always faster|guaranteed|guarantees (?:success|availability|reliability|speed|zero|no)|best for|zero latency|never fails|eliminates all)\b',all_text,re.I):raise CreativeReviewFailed('Unqualified performance claim needs correction')
     return True

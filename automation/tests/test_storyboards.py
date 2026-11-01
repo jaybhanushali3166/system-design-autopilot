@@ -15,6 +15,9 @@ class StoryboardTests(unittest.TestCase):
  def test_reviewed_next_reel_follows_curriculum_and_new_contract(self):
   c=candidate();self.assertEqual(validate(c)['story']['version'],3);self.assertTrue(check_mechanism_language(c))
   self.assertEqual(len(c['scenes']),7);self.assertEqual(len(c['story']['takeaway']),2)
+ def test_action_feedback_identifies_the_beat_to_correct(self):
+  c=candidate();c['scenes'][2]['action']='route';c['scenes'][2]['narration']='A collection of unrelated terms appears in this explanation.';c['scenes'][2]['note']='Unrelated labels.'
+  with self.assertRaisesRegex(CreativeReviewFailed,'Scene 3: route'):check_mechanism_language(c)
  def test_distinct_planned_openers_and_legacy_boundary(self):
   self.assertIsNone(storyboard_plan({'id':'lesson-11'}))
   plans=[storyboard_plan({'id':f'lesson-{i}'}) for i in range(12,18)]
