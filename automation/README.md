@@ -161,7 +161,7 @@ For an already active queue, preview an update with `python -m automation.resche
 
 ## Story correction v2 — 27 October 2026
 
-From lesson 12 onward, generated scripts use story v3: six to eight beats around one worked input, a trusted per-lesson debugging/prediction/trade-off storyboard, an observable mechanism at entry, and one or two useful ending checks. `storyboards.json` specifies distinct premises for lessons 12–17; later lessons rotate formats within their curriculum scope. The first frame is no longer forced into a two-lane race. First-stage rollout retains the 45–105-second safety budget, Fenrir, light palette, dark covers and 11 AM IST schedule. Short 25–35-second episodes remain a separate future duration test.
+From lesson 12 onward, generated scripts use story v3: six to eight beats around one worked input, a trusted per-lesson debugging/prediction/trade-off storyboard, an observable mechanism at entry, and one or two useful ending checks. `storyboards.json` specifies distinct premises for lessons 12–17; later lessons rotate formats within their curriculum scope. The first frame is no longer forced into a two-lane race. First-stage rollout retains the 45–105-second safety budget, Gemini Varo, light palette, dark covers and 11 AM IST schedule. Short 25–35-second episodes remain a separate future duration test.
 
 Earlier reviewed v2 films remain valid. For v3, the renderer records the exact colored carrier path, and the encoded-frame gate checks its actual position at 0, 1.5 and 3 seconds; absent or static carriers fail. Arity, narration/action language, no repeated setup, caption alignment, audio and browser validation still apply. The Worker accepts only reviewed v2/v3 outputs tied to the encoded file hash. These constrained checks do not claim human-level editorial judgment or guaranteed reach.
 
@@ -201,3 +201,8 @@ To roll back, revert the voice-switch PR; this restores the previous Varo voice/
 ### Storyboard research, 1 November 2026
 
 The opening test addresses a recent five-reel median skip rate of 76.4% and average watch time of 3.912 seconds at unequal ages. These are provisional descriptive observations, not causal winner claims. Keep posting time/voice/theme stable; compare actual 24-hour, 72-hour and seven-day snapshots. Record per-reach likes, saves and shares with raw counts. Competitor public likes are not retention or share-rate benchmarks.
+### Scheduled narration — 1 November 2026
+
+The user approved the Gemini Varo draft and selected the same voice for subsequent scheduled reels. The configured voice is `en-us-varo`, model `gemini-3.8-flash-tts`, using one continuous narration request with measured short captions. Voice retries are spaced at least90 seconds and retain quota-aware backoff/daily deferral. No automatic voice substitution is enabled. A Gemini app subscription does not itself establish API quota; use the API project's billing and rate limits.
+
+The receiver accepts reviewed story v2 and v3 artifacts with the existing duration/audio/browser/review/hash checks. This permits the exact approved manual lesson12 release; it does not activate the separate unfinished storyboard-generation PR. Daily11 AM IST and remaining lesson dates are unchanged.

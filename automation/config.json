@@ -19,15 +19,15 @@
   "late_window_minutes": 30,
   "publishing_enabled": false,
   "generation_provider": "gemini",
-  "voice": "am_fenrir",
+  "voice": "en-us-varo",
   "max_generation_attempts": 3,
   "max_duration_seconds": 105,
   "fps": 30,
   "width": 1080,
   "height": 1920,
   "hyperframes_version": "0.8.198",
-  "voice_provider": "kokoro",
-  "gemini_voice_interval_seconds": 65,
+  "voice_provider": "gemini",
+  "gemini_voice_interval_seconds": 90,
   "alignment_model": "tiny.en",
   "video_theme": "light-workshop",
   "cover_theme": "dark-series",
@@ -37,5 +37,5 @@
     "lesson-11": "3121d23d27a7050e84e6f876cba3e29671002b6c6bb21baa65bfaba1db416e5c",
     "lesson-12": "0aa66425b6eac82c72bdb4db195c9b84664436859e4d712e3398c8e80d1382bc"
   },
-  "voice_speed": 1.0
+  "voice_model": "gemini-3.8-flash-tts"
 }

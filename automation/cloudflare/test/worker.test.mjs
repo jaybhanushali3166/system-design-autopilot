@@ -110,7 +110,7 @@ test('technical validation cannot bypass the rendered story gate',()=>{
  for(const change of [{creative_review_passed:false},{story_contract:1},{opening_result_seconds:23.3},{creative_review_sha256:null},{rendered_sha256:'invalid'}]) assert.throws(()=>validateResult({...sample,validation:{...sample.validation,...change}},'demo'));
 });
 
- test('story v3 evidence is accepted without weakening the required rendered gate',()=>{
+ test('reviewed v3 release retains the rendered-file validation gate',()=>{
   assert.doesNotThrow(()=>validateResult({...sample,validation:{...sample.validation,story_contract:3}},'demo'));
   assert.throws(()=>validateResult({...sample,validation:{...sample.validation,story_contract:3,creative_review_passed:false}},'demo'));
  });
