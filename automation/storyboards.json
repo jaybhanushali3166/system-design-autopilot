@@ -25,7 +25,7 @@
       "hook": "Incoming writes are piling up faster than this storage path can drain them.",
       "example": "Write key K",
       "recipient": "An engineer choosing a storage engine",
-      "visual": "A write backlog grows above a single worker. Trace this write through a tree update versus buffered append, flush and compaction; label alternatives, never imply two mandatory serial engines.",
+      "visual": "A write backlog grows above a single worker. Trace this write through a tree update versus buffered append, flush and compaction; label alternatives, never imply two mandatory serial engines. Use route to trace a write moving from buffer to sorted file. For compaction, fanout can show a worker reading two files and combining their data. Flushing a buffer is not replication; avoid universal speed or complexity claims.",
       "beats": [
         "Show the growing write backlog",
         "Predict what buffering moves to later",
