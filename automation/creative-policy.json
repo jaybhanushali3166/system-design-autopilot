@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-01-storyboards",
+  "version": "2026-11-02-consequence-first",
   "video_theme": "light-workshop",
   "cover_theme": "dark-series",
   "word_target": [
@@ -8,6 +8,7 @@
   ],
   "principles": [
     "Open on a concrete consequence using a topic-specific mechanism; show an observable result by three seconds. Do not force every opening into two lanes.",
+    "State a recognizable consequence before technical terminology. Match the first-frame action to the spoken consequence; at most six words in the opening title. Beat two explains the stakes and advances the example without repeating setup.",
     "Follow one worked example through one mechanism. Explain technical terms after their visible purpose.",
     "Reveal a useful consequence in the opening teaching beat. Avoid reading a list.",
     "One main idea per scene; a production caveat that actually explains the trade-off.",
@@ -81,5 +82,21 @@
     "recent_five_median_skip_rate_pct": 76.4,
     "recent_five_median_watch_seconds": 3.912,
     "limits": "Unequal post ages, tiny interaction counts, no causal winner. Test openings before duration/voice/theme changes."
+  },
+  "research_2026_11_02": {
+    "sample_reels": 19,
+    "reference": {
+      "lesson": "lesson-06",
+      "views": 1390,
+      "skip_rate_pct": 48.7,
+      "average_watch_seconds": 9.55
+    },
+    "latest": {
+      "lesson": "lesson-12",
+      "views": 94,
+      "skip_rate_pct": 78.8,
+      "average_watch_seconds": 3.29
+    },
+    "limits": "Lifetime observations at unequal ages; no causal attribution to timing, voice or opening. Consequence-first is a creative hypothesis, not a viral guarantee."
   }
 }

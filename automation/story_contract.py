@@ -61,6 +61,7 @@ def validate_story_v3(content):
     scenes=content.get('scenes',[])
     if not 6<=len(scenes)<=8 or scenes[-1]['action']!='checklist':raise ValueError('Six to eight beats must end in a usable reference')
     if scenes[0]['action'] not in ['scan','block','queue','route','lookup']:raise ValueError('Opening must show a supported concrete mechanism')
+    if len(scenes[0]['title'].split())>6:raise ValueError('Opening title must fit six words')
     if not 8<=len(scenes[0]['narration'].split())<=18:raise ValueError('Opening narration must reach the consequence in 8–18 words')
     for i,scene in enumerate(scenes):
         action=scene['action']

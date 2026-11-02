@@ -57,6 +57,7 @@ def storyboard_prompt(lesson,feedback,plan):
  return """Create an English vertical system-design debugging story. Return JSON only, story.version=3.
 Follow the TRUSTED STORYBOARD PLAN below, including format and opening_action. When a hook is supplied it is the fixed first spoken line; do not rephrase it. Curriculum bounds the facts.
 Use SEVEN or EIGHT beats around ONE specific input; vary composition through real mechanism actions.
+OPENING RULES: state a recognizable user/developer consequence before storage-engine or protocol terminology. The first frame must demonstrate the same consequence as the spoken line; do not show an unrelated animation. Use at most six words for the opening title, separate from the spoken hook. Beat two must explain why the consequence matters and advance the same input, rather than repeat the hook. These are editorial requirements, not a promise of reach.
 The first frame already shows the input and the problem. First spoken line is 8–18 words, a concrete observable consequence, not a course introduction or terminology definition.
 opening.subject is a physical carrier label of at most 6 characters; opening.outcome is the visible result, at most 40 characters; result_at=2.4. Do not use the legacy two-lane compare opening.
 Beat two advances the same example. Middle beats demonstrate one cause/effect each. Explain purpose before jargon.

@@ -31,7 +31,7 @@
   "alignment_model": "tiny.en",
   "video_theme": "light-workshop",
   "cover_theme": "dark-series",
-  "creative_policy_version": "2026-11-01-storyboards",
+  "creative_policy_version": "2026-11-02-consequence-first",
   "reviewed_script_fallbacks": {
     "lesson-10": "2b0c27f0ff4b3dc670ce595e4dde959d1e8600fca27b81409bd06c6c6187ebaf",
     "lesson-11": "3121d23d27a7050e84e6f876cba3e29671002b6c6bb21baa65bfaba1db416e5c",

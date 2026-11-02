@@ -60,7 +60,7 @@ def align_audio(scenes,raw,project,key_hash,duration,model_name='tiny.en'):
  words=transcript(model_name,True)
  try:timeline,groups,agreement=align_continuous(scenes,words,duration)
  except ValueError as exc:
-  if str(exc) not in ['Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption']:raise
+  if str(exc) not in ['Continuous narration does not sufficiently match script','Cannot confidently align a scene or caption','Nonmonotonic caption timings']:raise
   print('Checking narration with local base.en alignment; no new speech synthesis.',flush=True)
   words=transcript('base.en',False)
   timeline,groups,agreement=align_continuous(scenes,words,duration)

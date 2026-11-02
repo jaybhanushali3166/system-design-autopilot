@@ -6,6 +6,21 @@ from automation import gemini_http
 
 class GeminiVoiceTests(unittest.TestCase):
  def setUp(self):gemini_http._next_request.clear()
+ def test_caption_collision_retries_measured_alignment_without_new_speech(self):
+  import json,sys,types
+  from pathlib import Path
+  from tempfile import TemporaryDirectory
+  from automation.alignment import align_audio
+  with TemporaryDirectory() as folder:
+   p=Path(folder)
+   for suffix in ['', '-base.en']:(p/f'alignment-test{suffix}.json').write_text(json.dumps([{'word':'K','start':0,'end':1}]))
+   fallback=([{'start':0}], [{'start':0,'duration':1}], 1.0)
+   with patch.dict(sys.modules,{'faster_whisper':types.SimpleNamespace(WhisperModel=Mock())}),patch('automation.alignment.align_continuous',side_effect=[ValueError('Nonmonotonic caption timings'),fallback]) as align:
+    result=align_audio([{'narration':'K'}],p/'unused.wav',p,'test',2)
+    self.assertEqual(result[-1],1.0);self.assertEqual(align.call_count,2)
+   with patch.dict(sys.modules,{'faster_whisper':types.SimpleNamespace(WhisperModel=Mock())}),patch('automation.alignment.align_continuous',side_effect=ValueError('Nonmonotonic caption timings')):
+    with self.assertRaisesRegex(ValueError,'Nonmonotonic'):align_audio([{'narration':'K'}],p/'unused.wav',p,'test',2)
+
  def test_provider_and_style_changes_invalidate_reused_audio(self):
   old={'voice':'am_michael'}
   current={'voice_provider':'gemini','voice':'en-us-varo','voice_model':'gemini-3.8-flash-tts'}

@@ -22,10 +22,10 @@
     "lesson-13": {
       "format": "prediction",
       "opening_action": "queue",
-      "hook": "Incoming writes are piling up faster than this storage path can drain them.",
+      "hook": "Your database looks fast until the writes keep coming.",
       "example": "Write key K",
       "recipient": "An engineer choosing a storage engine",
-      "visual": "A write backlog grows above a single worker. Trace this write through a tree update versus buffered append, flush and compaction; label alternatives, never imply two mandatory serial engines. Use route to trace a write moving from buffer to sorted file. For compaction, fanout can show a worker reading two files and combining their data. Flushing a buffer is not replication; avoid universal speed or complexity claims.",
+      "visual": "First frame: FAST TEST. GROWING BACKLOG. Incoming writes visibly outpace cleanup. Beat two explains that a short test can hide cleanup work, then follows key K. Show B+ tree leaf update as one alternative, and WAL-enabled LSM logging, memory buffer, flush and compaction as another. Keep the same key visible. Label simplified lookup and durability boundaries. No universal winner.",
       "beats": [
         "Show the growing write backlog",
         "Predict what buffering moves to later",
@@ -59,7 +59,7 @@
     "lesson-15": {
       "format": "tradeoff",
       "opening_action": "lookup",
-      "hook": "The product page returns yesterday’s price even though the source already changed.",
+      "hook": "The product page returns yesterday\u2019s price even though the source already changed.",
       "example": "Product P price",
       "recipient": "A teammate building a read model",
       "visual": "Read a stale product price from a read-optimized copy. Keep the product ID visible as the source changes, copy catches up, and a reader observes the update.",

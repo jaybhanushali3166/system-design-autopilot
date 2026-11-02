@@ -15,6 +15,10 @@ class StoryboardTests(unittest.TestCase):
  def test_reviewed_next_reel_follows_curriculum_and_new_contract(self):
   c=candidate();self.assertEqual(validate(c)['story']['version'],3);self.assertTrue(check_mechanism_language(c))
   self.assertEqual(len(c['scenes']),7);self.assertEqual(len(c['story']['takeaway']),2)
+ def test_opening_title_cannot_turn_into_a_dense_explanation(self):
+  c=candidate();c['scenes'][0]['title']='This opening has far too many separate words'
+  with self.assertRaisesRegex(ValueError,'six words'):validate(c)
+
  def test_action_feedback_identifies_the_beat_to_correct(self):
   c=candidate();c['scenes'][2]['action']='route';c['scenes'][2]['narration']='A collection of unrelated terms appears in this explanation.';c['scenes'][2]['note']='Unrelated labels.'
   with self.assertRaisesRegex(CreativeReviewFailed,'Scene 3: route'):check_mechanism_language(c)
@@ -46,6 +50,8 @@ class StoryboardTests(unittest.TestCase):
    result=generate({'id':'lesson-12'});self.assertEqual(result['story']['format'],'debug');self.assertEqual(result['scenes'][0]['narration'],storyboard_plan({'id':'lesson-12'})['hook'])
    payload=post.call_args.kwargs['payload'];self.assertEqual(payload['generationConfig']['responseJsonSchema']['properties']['scenes']['minItems'],7)
    self.assertIn('TRUSTED STORYBOARD PLAN',payload['contents'][0]['parts'][0]['text'])
+   self.assertIn('recognizable user/developer consequence',payload['contents'][0]['parts'][0]['text'])
+   self.assertIn('Beat two must explain',payload['contents'][0]['parts'][0]['text'])
    variants=payload['generationConfig']['responseJsonSchema']['properties']['scenes']['items']['anyOf']
    selected=next(v for v in variants if 'select' in v['properties']['action']['enum'])
    self.assertEqual(selected['properties']['nodes']['minItems'],4)
