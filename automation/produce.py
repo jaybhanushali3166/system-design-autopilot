@@ -8,6 +8,7 @@ from .catalog import build_catalog
 from .content import generate,digest,validate
 from .creative_feedback import fetch_feedback,policy
 from .story_contract import validate_story
+from .storyboards import storyboard_plan
 from .creative_review import review_rendered,CreativeReviewFailed
 from .gemini_http import GeminiRequestError
 from .voice import synthesize
@@ -65,7 +66,7 @@ def reviewed_script_fallback(lesson):
 def lesson_content(lesson, provider, project, resume):
  # A restored runner must use exactly the same script to reuse its scene audio.
  source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview'),
-         'reviewed_fallback_hash':config().get('reviewed_script_fallbacks',{}).get(lesson['id']),'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
+         'storyboard':storyboard_plan(lesson),'reviewed_fallback_hash':config().get('reviewed_script_fallbacks',{}).get(lesson['id']),'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
  if provider=='approved':
   approved=ROOT/'automation/lessons'/f'{lesson["id"]}.approved.json'
   source['approved_hash']=hashlib.sha256(approved.read_bytes()).hexdigest() if approved.exists() else None
@@ -81,6 +82,7 @@ def lesson_content(lesson, provider, project, resume):
   write_json(feedback_path,feedback)
  # Freeze prompt provenance and feedback even if the first draft or correction fails.
  write_json(manifest,source)
+ if source['storyboard']:write_json(project/'storyboard-plan.json',source['storyboard'])
  try:
   content=generate(lesson,provider,feedback=feedback,diagnostics=project/'script-attempts.json',
                    checkpoint=project/'script-progress.json',resume=resume)
@@ -130,7 +132,7 @@ def run(args):
  CURRENT_STAGE='validation'
  validate=validate_video(project/'reel.mp4',audio['duration'],True)
  creative=review_rendered(lesson,content,audio,project,hash_value)
- validate.update(story_contract=2,opening_result_seconds=creative['opening_result_seconds'],creative_review_passed=creative['passed'],creative_review_sha256=hashlib.sha256((project/'creative-review.json').read_bytes()).hexdigest(),rendered_sha256=creative['rendered_sha256'])
+ validate.update(story_contract=content['story']['version'],opening_result_seconds=creative['opening_result_seconds'],creative_review_passed=creative['passed'],creative_review_sha256=hashlib.sha256((project/'creative-review.json').read_bytes()).hexdigest(),rendered_sha256=creative['rendered_sha256'])
  cover_metadata=render_cover(lesson,lessons,project,content)
  # Evidence snapshots are extracted from the final encoded video, at each scene's proof pose.
  for scene in audio['scenes']:

@@ -1,0 +1,116 @@
+{
+  "version": "2026-11-01",
+  "lessons": {
+    "lesson-12": {
+      "format": "debug",
+      "opening_action": "scan",
+      "hook": "Your order search checks row after row before it finds order forty-two in the table.",
+      "example": "Order 42",
+      "recipient": "A teammate investigating a slow query",
+      "visual": "A query cursor scans a table grid. Later follow the same order through an index; illustrate composite-column ordering with the same query.",
+      "beats": [
+        "Show the slow scan immediately",
+        "Reveal the matching index path",
+        "Apply the actual filter and sort",
+        "Show why composite column order matters",
+        "Update a row and its index entry",
+        "End with query-plan and write-cost checks"
+      ],
+      "ending": "One query-plan check and one write-cost check",
+      "beat_count": 7
+    },
+    "lesson-13": {
+      "format": "prediction",
+      "opening_action": "queue",
+      "hook": "Your database looks fast until the writes keep coming.",
+      "example": "Write key K",
+      "recipient": "An engineer choosing a storage engine",
+      "visual": "First frame: FAST TEST. GROWING BACKLOG. Incoming writes visibly outpace cleanup. Beat two explains that a short test can hide cleanup work, then follows key K. Show B+ tree leaf update as one alternative, and WAL-enabled LSM logging, memory buffer, flush and compaction as another. Keep the same key visible. Label simplified lookup and durability boundaries. No universal winner.",
+      "beats": [
+        "Show the growing write backlog",
+        "Predict what buffering moves to later",
+        "Trace an append and later flush",
+        "Show compaction doing additional work",
+        "Compare the read path and amplification",
+        "End with a workload test"
+      ],
+      "ending": "One read/write workload decision rule",
+      "beat_count": 8
+    },
+    "lesson-14": {
+      "format": "debug",
+      "opening_action": "block",
+      "hook": "This transfer stops halfway through the update when the database suddenly crashes.",
+      "example": "Transfer A to B",
+      "recipient": "A teammate writing balance updates",
+      "visual": "One transfer reaches a crash boundary. Carry the same transfer through two row changes, a local transaction and WAL recovery; distinguish uncommitted work from durable commit.",
+      "beats": [
+        "Show the transfer interrupted",
+        "Expose the partial-update risk without a transaction",
+        "Group the two updates atomically",
+        "Show the log before acknowledging durable commit",
+        "Recover or roll back the same transaction",
+        "Name the external-payment boundary",
+        "End with a crash test"
+      ],
+      "ending": "One controlled-crash test and one external-side-effect check",
+      "beat_count": 7
+    },
+    "lesson-15": {
+      "format": "tradeoff",
+      "opening_action": "lookup",
+      "hook": "The product page returns yesterday\u2019s price even though the source already changed.",
+      "example": "Product P price",
+      "recipient": "A teammate building a read model",
+      "visual": "Read a stale product price from a read-optimized copy. Keep the product ID visible as the source changes, copy catches up, and a reader observes the update.",
+      "beats": [
+        "Show a stale result from the copy",
+        "Locate the authoritative price",
+        "Trace the joined read alternative",
+        "Update the duplicated read model",
+        "Show the propagation gap and repair",
+        "End with freshness and reconciliation checks"
+      ],
+      "ending": "One freshness rule and one reconciliation check",
+      "beat_count": 7
+    },
+    "lesson-16": {
+      "format": "prediction",
+      "opening_action": "route",
+      "hook": "The video reaches object storage before its final record exists in the database.",
+      "example": "Upload video V",
+      "recipient": "A developer adding large-file uploads",
+      "visual": "A file token reaches object storage directly. Keep metadata and bytes distinct; show scoped upload permission, validation, finalization and an orphan when finalization fails.",
+      "beats": [
+        "Show bytes arriving without final metadata",
+        "Ask what a completed upload means",
+        "Issue a scoped upload URL",
+        "Send bytes directly to object storage",
+        "Validate and finalize metadata",
+        "Repair an interrupted finalization",
+        "End with an orphan-upload check"
+      ],
+      "ending": "One upload-finalization and cleanup rule",
+      "beat_count": 7
+    },
+    "lesson-17": {
+      "format": "tradeoff",
+      "opening_action": "lookup",
+      "hook": "This identifier finds a record, but its timestamp cannot prove what happened first.",
+      "example": "New record ID",
+      "recipient": "An engineer choosing distributed IDs",
+      "visual": "An ID token finds a record, then show independently generated IDs and physical index placement. Contrast random and time-ordered choices without promising causal order or zero collisions.",
+      "beats": [
+        "Show an ID locating the record",
+        "Generate IDs independently on two servers",
+        "Show random insertion locations",
+        "Show time-ordered locality",
+        "Expose clock and worker-identity assumptions",
+        "Separate time order from causal order",
+        "End with an ID-choice check"
+      ],
+      "ending": "One locality check and one correctness boundary",
+      "beat_count": 7
+    }
+  }
+}

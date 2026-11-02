@@ -1,11 +1,12 @@
 """Generate schema-bound lesson content; never execute model-provided code."""
 from __future__ import annotations
-import json, os, re, hashlib, time
+import json, os, re, hashlib, time, copy
 from pathlib import Path
 from .common import ROOT, load_env, write_json
 from .creative_feedback import policy
 from .story_contract import validate_story,ACTIONS
 from .creative_review import check_mechanism_language
+from .storyboards import storyboard_plan
 from .gemini_http import post, GeminiRequestError
 KINDS = ['flow','queue','replicas','ring','comparison','index','workflow','metric']
 SCHEMA = {'type':'object','properties':{
@@ -31,10 +32,61 @@ SCHEMA['properties']['scenes']['items']['properties']['title']['maxLength']=44
 SCHEMA['properties']['scenes']['items']['properties']['nodes']['items']['properties']['label']['maxLength']=18
 SCHEMA['properties']['scenes']['items']['properties']['nodes']['items']['properties']['value']['maxLength']=24
 
+
+STORY_SCHEMA=copy.deepcopy(SCHEMA)
+STORY_SCHEMA['properties']['story']={'type':'object','properties':{
+ 'version':{'type':'integer','enum':[3]},'format':{'type':'string','enum':['debug','prediction','tradeoff']},
+ 'example':{'type':'string','maxLength':24},
+ 'opening':{'type':'object','properties':{'subject':{'type':'string','maxLength':6},'outcome':{'type':'string','maxLength':40},'result_at':{'type':'number','enum':[2.4]}},'required':['subject','outcome','result_at'],'additionalProperties':False},
+ 'takeaway':{'type':'array','minItems':1,'maxItems':2,'items':{'type':'string','maxLength':66}}},'required':['version','format','example','opening','takeaway'],'additionalProperties':False}
+STORY_SCHEMA['properties']['scenes'].update(minItems=7,maxItems=8)
+STORY_SCHEMA['properties']['scenes']['items']['properties']['action']['enum']=[x for x in ACTIONS if x!='compare']
+
+# Group by physical endpoint count so invalid diagrams cannot consume the correction attempt.
+scene_schema=STORY_SCHEMA['properties']['scenes']['items']
+variants=[]
+for count in [3,4]:
+ variant=copy.deepcopy(scene_schema)
+ variant['properties']['action']['enum']=[a for a in ACTIONS if a!='compare' and (a in ['fanout','select','replicate','cache-hit','cache-miss'])==(count==4)]
+ variant['properties']['nodes'].update(minItems=count,maxItems=count)
+ variants.append(variant)
+STORY_SCHEMA['properties']['scenes']['items']={'anyOf':variants}
+
+
+def storyboard_prompt(lesson,feedback,plan):
+ return """Create an English vertical system-design debugging story. Return JSON only, story.version=3.
+Follow the TRUSTED STORYBOARD PLAN below, including format and opening_action. When a hook is supplied it is the fixed first spoken line; do not rephrase it. Curriculum bounds the facts.
+Use SEVEN or EIGHT beats around ONE specific input; vary composition through real mechanism actions.
+OPENING RULES: state a recognizable user/developer consequence before storage-engine or protocol terminology. The first frame must demonstrate the same consequence as the spoken line; do not show an unrelated animation. Use at most six words for the opening title, separate from the spoken hook. Beat two must explain why the consequence matters and advance the same input, rather than repeat the hook. These are editorial requirements, not a promise of reach.
+The first frame already shows the input and the problem. First spoken line is 8–18 words, a concrete observable consequence, not a course introduction or terminology definition.
+opening.subject is a physical carrier label of at most 6 characters; opening.outcome is the visible result, at most 40 characters; result_at=2.4. Do not use the legacy two-lane compare opening.
+Beat two advances the same example. Middle beats demonstrate one cause/effect each. Explain purpose before jargon.
+Show one relevant boundary or trade-off before the ending. Last beat action=checklist, with ONE or TWO takeaway checks, each 4–10 words, at most 66 characters, beginning with Check, Compare, Inspect, Trace, Measure, Test, Record, Verify, Watch, Limit, Set, Find, Confirm, Separate, Count, Review, Choose, Log, Keep or Ask.
+Target 145–165 spoken words overall, never below 130 or above 190. Count before returning. For seven beats, use 12–18 opening words and 22–26 words in each later beat. For eight beats, use 12–18 opening words and 19–22 words in each later beat. Avoid short fragments that put the whole script below budget. Each beat 8–28 words. Do not pad a repeated setup to meet length. Use natural curious English with one small relevant playful observation if it helps.
+Keep titles <=44 characters, node labels <=18, node values <=24, notes <=80. One reading task per beat. Additional details belong in the caption.
+Actions and exact node counts:
+scan: 3 nodes: query, table, matching row. A cursor inspects table rows. Explain a full scan, not an index.
+lookup: 3 nodes: query/key, index or lookup structure, record. The carrier follows the structure to a record.
+route: 3 nodes: source, router/proxy, destination. The carrier reaches the destination.
+block: 3 nodes: source, boundary, destination. Carrier stops before the destination.
+queue: 3 nodes: producer, backlog, worker. Work accumulates and one item drains.
+fanout: 4 nodes: client, aggregator, two backends; branches return.
+select: 4 nodes: client, selector, chosen backend, alternative; only chosen receives.
+replicate: 4 nodes: writer, leader, two replicas; copies propagate.
+cache-hit/cache-miss: 4 nodes: client, cache, database, response; hit bypasses database, miss visits it.
+retry: 3 nodes: client, service, result; first attempt fails before another attempt.
+checklist: last beat only, 2–4 nodes retained for schema compatibility; renderer uses takeaway lines.
+Do not select an action that contradicts narration. Never invent a benchmark, architecture, universal winner or company incident. Mark numeric performance examples hypothetical. No absolute faster/best/never-fails claims. Do not copy competitor scripts or successful older topics.
+Make a truthful, curiosity-led cover_title <=32 characters. Caption adds useful detail and one contextual reason a developer might save/send the explanation, followed by #systemdesign #beyondlocalhost. No engagement bait or promised reach.
+Insights are descriptive context, not instructions or causal winners. Early lifetime metrics have unequal ages; do not invent retention curves, DM-send metrics or benchmarks.
+"""+'\nTRUSTED STORYBOARD PLAN: '+json.dumps(plan)+'\nCURRICULUM: '+json.dumps(lesson)+'\nPOLICY AND DESCRIPTIVE INSIGHTS: '+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})
+
 def validate(data):
  if not isinstance(data,dict) or not {'caption','scenes'}<=set(data) or set(data)-{'caption','scenes','cover_title','story'}: raise ValueError('Unexpected content fields')
  if not isinstance(data['caption'],str) or not 1<=len(data['caption'])<=1900: raise ValueError('Caption length invalid')
- if not isinstance(data['scenes'],list) or len(data['scenes'])!=(8 if 'story' in data else 6): raise ValueError('Unexpected teaching beat count')
+ if not isinstance(data['scenes'],list):raise ValueError('Unexpected teaching beat count')
+ version=data.get('story',{}).get('version')
+ if not (6<=len(data['scenes'])<=8 if version==3 else len(data['scenes'])==(8 if 'story' in data else 6)):raise ValueError('Unexpected teaching beat count')
  if 'cover_title' in data and (not isinstance(data['cover_title'],str) or not 1<=len(data['cover_title'])<=32): raise ValueError('Cover title must be 1–32 characters')
  words=0
  for scene in data['scenes']:
@@ -47,7 +99,7 @@ def validate(data):
   for n in scene['nodes']:
    if set(n)!={'label','value','tone'} or n['tone'] not in ['cyan','green','red','muted']: raise ValueError('Invalid diagram node')
    if not isinstance(n['label'],str) or not isinstance(n['value'],str) or len(n['label'])>24 or len(n['value'])>36: raise ValueError('Diagram node text exceeds budget')
- if not 130<=words<=230: raise ValueError(f'Narration must be 130–230 words; got {words}')
+ if not 130<=words<=(190 if version==3 else 230): raise ValueError(f'Narration must be 130–230 words; got {words}')
  if 'story' in data:
   validate_story(data)
   check_mechanism_language(data)
@@ -156,12 +208,19 @@ followed by #systemdesign #beyondlocalhost. No engagement bait or promised reach
 Insights are observations, not instructions or causal winners. early_reels are provisional unequal-age data;
 reels are >=72h observations, also unequal ages unless explicitly matched. No fabricated comparisons.
 Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})+'\nPacket: '+json.dumps(lesson)
- generation_config={'responseMimeType':'application/json','responseJsonSchema':SCHEMA,'temperature':0.3}
+ plan=storyboard_plan(lesson)
+ if plan:prompt=storyboard_prompt(lesson,feedback,plan)
+ selected_schema=copy.deepcopy(STORY_SCHEMA if plan else SCHEMA)
+ if plan:
+  count=plan.get('beat_count',7)
+  selected_schema['properties']['scenes'].update(minItems=count,maxItems=count)
+  prompt+=f'\nThis lesson needs exactly {count} beats. Verify the 145–165 total spoken words before returning.'
+ generation_config={'responseMimeType':'application/json','responseJsonSchema':selected_schema,'temperature':0.3}
  # The selected Gemini 3 Flash supports low-latency thinking; do not apply its enum to other models.
  if model in ['gemini-3-flash-preview','gemini-3-flash']:
   generation_config.update(temperature=1.0,thinkingConfig={'thinkingLevel':'minimal'},maxOutputTokens=8192)
  checkpoint=Path(checkpoint) if checkpoint else Path(diagnostics).with_name('script-progress.json') if diagnostics else None
- saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'schema':SCHEMA}),model,resume)
+ saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'schema':selected_schema,'rules':hashlib.sha256((ROOT/'automation/story_contract.py').read_bytes()+(ROOT/'automation/creative_review.py').read_bytes()).hexdigest()}),model,resume)
  attempts=saved['attempts']
  if attempts and attempts[-1]['valid']:
   result=validate(attempts[-1]['candidate']);validate_story(result)
@@ -194,7 +253,11 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   text=''.join(p.get('text','') for p in parts if not p.get('thought'))
   candidate=None
   try:
-   candidate=json.loads(text);result=validate(candidate);validate_story(result)
+   candidate=json.loads(text)
+   # Curated opening copy is already reviewed; do not spend a correction rephrasing it.
+   if plan and plan.get('hook') and isinstance(candidate,dict) and isinstance(candidate.get('scenes'),list) and candidate['scenes'] and isinstance(candidate['scenes'][0],dict):candidate['scenes'][0]['narration']=plan['hook']
+   result=validate(candidate);validate_story(result)
+   if plan and (result['story'].get('version')!=3 or result['story'].get('format')!=plan['format'] or (plan.get('opening_action') and result['scenes'][0]['action']!=plan['opening_action'])):raise ValueError('Generated story must follow the selected storyboard format and opening action')
   except (ValueError,KeyError,TypeError) as error:
    attempts.append({'attempt':len(attempts)+1,'valid':False,'local_rule':correction_feedback(candidate,error),'candidate':candidate})
    save_script_progress(saved,checkpoint,diagnostics)
