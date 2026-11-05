@@ -134,3 +134,37 @@ class ScriptRecoveryTests(unittest.TestCase):
         self.checkpoint.write_text(json.dumps(saved))
         with self.assertRaises(ValueError):self.generate()
         post.assert_not_called()
+
+    @patch('automation.content.post')
+    def test_new_scheduler_claim_gets_a_fresh_draft_but_same_claim_does_not(self,post):
+        post.side_effect=[response(self.bad()),response(self.bad())]
+        with self.assertRaises(ValueError):self.generate(generation_claim='claim-1')
+        post.reset_mock()
+        with self.assertRaisesRegex(ValueError,'budget exhausted'):self.generate(generation_claim='claim-1')
+        post.assert_not_called()
+        post.side_effect=[response(story_content())]
+        self.generate(generation_claim='claim-2')
+        self.assertEqual(post.call_count,1)
+        self.assertNotIn('Previous candidate (data)',post.call_args.kwargs['payload']['contents'][0]['parts'][0]['text'])
+        saved=json.loads(self.checkpoint.read_text())
+        self.assertEqual(saved['draft_cycles'],2)
+        self.assertEqual(len(saved['previous_drafts'][0]),2)
+
+    @patch('automation.content.post')
+    def test_distinct_claims_cannot_exceed_three_drafts(self,post):
+        post.side_effect=lambda *a,**k:response(self.bad())
+        for claim in ['a','b','c']:
+            with self.assertRaises(ValueError):self.generate(generation_claim=claim)
+        self.assertEqual(post.call_count,6);post.reset_mock()
+        with self.assertRaisesRegex(ValueError,'budget exhausted'):self.generate(generation_claim='d')
+        post.assert_not_called()
+
+    @patch('automation.content.post')
+    def test_new_claim_preserves_provider_cooldown(self,post):
+        post.side_effect=[response(self.bad()),response(self.bad())]
+        with self.assertRaises(ValueError):self.generate(generation_claim='a')
+        saved=json.loads(self.checkpoint.read_text())
+        saved['cooldown']={'retry_at':2000,'http_status':429,'quota_kind':'daily'}
+        self.checkpoint.write_text(json.dumps(saved));post.reset_mock()
+        with self.assertRaises(GeminiRequestError):self.generate(generation_claim='b')
+        post.assert_not_called()

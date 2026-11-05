@@ -5,7 +5,7 @@ from pathlib import Path
 from .common import ROOT, load_env, write_json
 from .creative_feedback import policy
 from .story_contract import validate_story,ACTIONS
-from .creative_review import check_mechanism_language
+from .creative_review import check_mechanism_language, MECHANISM_WORDS
 from .storyboards import storyboard_plan
 from .gemini_http import post, GeminiRequestError
 KINDS = ['flow','queue','replicas','ring','comparison','index','workflow','metric']
@@ -116,12 +116,15 @@ def correction_feedback(candidate,error):
    if not isinstance(scene,dict):continue
    action=scene.get('action');nodes=scene.get('nodes')
    required=4 if action in ['fanout','select','replicate','cache-hit','cache-miss'] else 3
+   if action in MECHANISM_WORDS:
+    text=(str(scene.get('narration',''))+' '+str(scene.get('note',''))).lower()
+    if not any(word in text for word in MECHANISM_WORDS[action]):rules.append(f'Scene {i+1}: explain {action} using a matching term ({", ".join(MECHANISM_WORDS[action][:5])}), or select the action actually described.')
    if action not in ['compare','checklist'] and isinstance(nodes,list) and len(nodes)!=required:
     rules.append(f'Scene {i+1}: {action} requires exactly {required} nodes, got {len(nodes)}.')
   checks=candidate.get('story',{}).get('takeaway',[]) if isinstance(candidate.get('story'),dict) else []
   for i,line in enumerate(checks):
    if isinstance(line,str) and (not 4<=len(line.split())<=10 or len(line)>66):rules.append(f'Takeaway {i+1}: use 4–10 words and at most 66 characters.')
- return ' '.join(dict.fromkeys(rules))[:600]
+ return ' '.join(dict.fromkeys(rules))[:2000]
 
 
 def script_progress(path, request_hash, model, resume):
@@ -132,12 +135,13 @@ def script_progress(path, request_hash, model, resume):
   saved=json.loads(path.read_text())
   if not isinstance(saved,dict) or saved.get('version')!=1:raise ValueError()
   attempts=saved['attempts']
+  if type(saved.get('draft_cycles',1)) is not int or not 1<=saved.get('draft_cycles',1)<=3:raise ValueError()
   if not isinstance(attempts,list) or len(attempts)>2:raise ValueError()
   for i,row in enumerate(attempts):
    if not isinstance(row,dict) or row.get('attempt')!=i+1 or type(row.get('valid')) is not bool:raise ValueError()
    if row['valid']:
     if i!=len(attempts)-1 or not isinstance(row.get('candidate'),dict):raise ValueError()
-   elif not isinstance(row.get('local_rule'),str) or len(row['local_rule'])>600:raise ValueError()
+   elif not isinstance(row.get('local_rule'),str) or len(row['local_rule'])>2000:raise ValueError()
   cooldown=saved.get('cooldown')
   if cooldown is not None:
    if not isinstance(cooldown,dict) or type(cooldown.get('retry_at')) is not int:raise ValueError()
@@ -156,7 +160,7 @@ def save_script_progress(saved, checkpoint, diagnostics):
   # Keep the existing review artifact shape; successful content lives in the checkpoint.
   write_json(diagnostics,[{k:v for k,v in row.items() if k!='candidate' or not row['valid']} for row in saved['attempts']])
 
-def generate(lesson, provider='gemini', feedback=None, diagnostics=None, checkpoint=None, resume=False):
+def generate(lesson, provider='gemini', feedback=None, diagnostics=None, checkpoint=None, resume=False, generation_claim=''):
  load_env()
  if provider=='approved':
   p=ROOT/'automation/lessons'/f'{lesson["id"]}.approved.json'
@@ -215,6 +219,7 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   count=plan.get('beat_count',7)
   selected_schema['properties']['scenes'].update(minItems=count,maxItems=count)
   prompt+=f'\nThis lesson needs exactly {count} beats. Verify the 145–165 total spoken words before returning.'
+ prompt+='\nFor each action, narration or note must explicitly describe its motion using at least one matching term: '+json.dumps(MECHANISM_WORDS)
  generation_config={'responseMimeType':'application/json','responseJsonSchema':selected_schema,'temperature':0.3}
  # The selected Gemini 3 Flash supports low-latency thinking; do not apply its enum to other models.
  if model in ['gemini-3-flash-preview','gemini-3-flash']:
@@ -226,10 +231,20 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
   result=validate(attempts[-1]['candidate']);validate_story(result)
   save_script_progress(saved,checkpoint,diagnostics)
   return result
- if len(attempts)>=2:raise ValueError('Script correction budget exhausted; inspect script-attempts.json')
  cooldown=saved.get('cooldown')
  if cooldown and cooldown['retry_at']>time.time():
   raise GeminiRequestError(cooldown['http_status'],cooldown['quota_kind'],cooldown['retry_at'])
+ if len(attempts)>=2:
+  # Only a new scheduler claim may start another draft; reruns keep their budget.
+  cycles=saved.get('draft_cycles',1)
+  if not generation_claim or generation_claim==saved.get('generation_claim') or cycles>=3:
+   raise ValueError('Script correction budget exhausted; inspect script-attempts.json')
+  saved.setdefault('previous_drafts',[]).append(attempts)
+  saved.update(attempts=[],draft_cycles=cycles+1,generation_claim=generation_claim)
+  attempts=saved['attempts']
+  print('New scheduler claim: replacing rejected draft within the three-draft limit.',flush=True)
+ elif generation_claim:
+  saved['generation_claim']=generation_claim
  if not key:raise ValueError('GEMINI_API_KEY missing; set it securely or choose an approved lesson for the pilot')
  saved.pop('cooldown',None)
  save_script_progress(saved,checkpoint,diagnostics)
