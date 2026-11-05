@@ -107,6 +107,60 @@ class GeminiHttpTests(unittest.TestCase):
             self.call()
         self.assertEqual(post.call_count, 1)
 
+    @patch.object(api.requests, 'post')
+    def test_request_timing_excludes_backoff_and_does_not_leak_secrets(self, post):
+        from contextlib import redirect_stdout
+        import io
+        def send(*args, **kwargs):
+            self.clock += 120
+            raise api.requests.ReadTimeout('https://private.test?key=private-key')
+        post.side_effect = send
+        logs = io.StringIO()
+        with redirect_stdout(logs), self.assertRaises(api.GeminiRequestError) as caught:
+            api.post('https://example.test', key='private-key', model='script', payload={}, max_attempts=3)
+        self.assertEqual(post.call_count, 3)
+        report = caught.exception.diagnostic()
+        self.assertEqual(report['transport_error'], 'read_timeout')
+        self.assertEqual(report['elapsed_seconds'], 120)
+        self.assertIn('transport=read_timeout; elapsed=120', logs.getvalue())
+        self.assertNotIn('private', logs.getvalue() + str(report) + str(caught.exception))
+
+    @patch.object(api.requests, 'post')
+    def test_certificate_failure_stops_without_retry_or_sensitive_output(self, post):
+        post.side_effect = api.requests.exceptions.SSLError('private certificate URL and key')
+        with self.assertRaises(api.GeminiRequestError) as caught:
+            self.call()
+        self.assertEqual(post.call_count, 1)
+        self.assertEqual(self.sleeps, [])
+        self.assertEqual(caught.exception.diagnostic()['transport_error'], 'tls_error')
+        self.assertNotIn('private', str(caught.exception.diagnostic()))
+
+    @patch.object(api.requests, 'post')
+    def test_transport_subclasses_are_classified_before_their_parent(self, post):
+        for cls, category in [
+            (api.requests.ConnectTimeout, 'connect_timeout'),
+            (api.requests.exceptions.ProxyError, 'proxy_error'),
+            (api.requests.ConnectionError, 'connection_error'),
+            (api.requests.Timeout, 'timeout'),
+            (api.requests.RequestException, 'request_error'),
+        ]:
+            with self.subTest(category=category):
+                api._next_request.clear()
+                post.side_effect = cls('private')
+                with self.assertRaises(api.GeminiRequestError) as caught:
+                    api.post('https://example.test', key='private-key', model='script', payload={}, max_attempts=1)
+                self.assertEqual(caught.exception.diagnostic()['transport_error'], category)
+                self.assertEqual(caught.exception.diagnostic()['elapsed_seconds'], 0)
+
+    @patch.object(api.requests, 'post')
+    def test_http_response_clears_previous_transport_timing_and_category(self, post):
+        post.side_effect = [api.requests.ReadTimeout('private'), response(403)]
+        with self.assertRaises(api.GeminiRequestError) as caught:
+            self.call()
+        self.assertEqual(caught.exception.status, 403)
+        self.assertNotIn('transport_error', caught.exception.diagnostic())
+        self.assertNotIn('elapsed_seconds', caught.exception.diagnostic())
+
     @patch.object(api.dt, 'datetime')
     def test_daily_reset_uses_pacific_day_including_dst(self, datetime):
         from zoneinfo import ZoneInfo
