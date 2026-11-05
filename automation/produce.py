@@ -63,7 +63,7 @@ def reviewed_script_fallback(lesson):
  return content
 
 
-def lesson_content(lesson, provider, project, resume):
+def lesson_content(lesson, provider, project, resume, generation_claim=''):
  # A restored runner must use exactly the same script to reuse its scene audio.
  source={'lesson':lesson,'provider':provider,'model':os.environ.get('GEMINI_MODEL','gemini-3-flash-preview'),
          'storyboard':storyboard_plan(lesson),'reviewed_fallback_hash':config().get('reviewed_script_fallbacks',{}).get(lesson['id']),'policy':policy(),'prompt_hash':hashlib.sha256((ROOT/'automation/content.py').read_bytes()).hexdigest()}
@@ -85,7 +85,7 @@ def lesson_content(lesson, provider, project, resume):
  if source['storyboard']:write_json(project/'storyboard-plan.json',source['storyboard'])
  try:
   content=generate(lesson,provider,feedback=feedback,diagnostics=project/'script-attempts.json',
-                   checkpoint=project/'script-progress.json',resume=resume)
+                   checkpoint=project/'script-progress.json',resume=resume,generation_claim=generation_claim)
  except (GeminiRequestError,ValueError):
   if provider!='gemini':raise
   content=reviewed_script_fallback(lesson)
@@ -108,7 +108,7 @@ def run(args):
  load_env();lessons=build_catalog();lesson=next((x for x in lessons if x['id']==args.lesson),None)
  if not lesson:raise ValueError('Unknown lesson ID')
  project=WORK/'runs'/lesson['id'];project.mkdir(parents=True,exist_ok=True)
- content=lesson_content(lesson,args.provider,project,args.resume)
+ content=lesson_content(lesson,args.provider,project,args.resume,args.job_token)
  validate_story(content)
  if args.prepare_only:
   print(f'Content prepared for {lesson["id"]}; no voice, upload or publication');return

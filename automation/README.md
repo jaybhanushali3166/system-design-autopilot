@@ -206,3 +206,12 @@ The opening test addresses a recent five-reel median skip rate of 76.4% and aver
 The user approved the Gemini Varo draft and selected the same voice for subsequent scheduled reels. The configured voice is `en-us-varo`, model `gemini-3.8-flash-tts`, using one continuous narration request with measured short captions. Voice retries are spaced at least90 seconds and retain quota-aware backoff/daily deferral. No automatic voice substitution is enabled. A Gemini app subscription does not itself establish API quota; use the API project's billing and rate limits.
 
 The receiver accepts reviewed story v2 and v3 artifacts with the existing duration/audio/browser/review/hash checks. This permits the exact approved manual lesson12 release; it does not activate the separate unfinished storyboard-generation PR. Daily11 AM IST and remaining lesson dates are unchanged.
+
+
+## Script failure recovery (5 November 2026)
+
+The script prompt now includes the same action vocabulary used by preflight, and a correction reports all detected action-language mismatches together. Crash/failure language is accepted for a carrier stopping at a boundary. Geometry, narration alignment, encoded-video inspection and upload validation remain required.
+
+An exhausted rejected draft no longer consumes subsequent scheduler attempts without doing work. A distinct scheduler claim may replace it with a fresh draft, bounded to three drafts of two candidates each. Re-running the same claim retains its budget. Partial drafts and successful scripts still resume; provider cooldowns survive recovery and old drafts remain in the progress evidence. The scheduler still caps production at three jobs and holds unresolved failures for inspection. This does not guarantee availability of external providers.
+
+Lesson 14 has a validated, hash-pinned fallback script explaining a local atomic transfer, durable-log acknowledgement, crash recovery and the external-payment boundary. It uses the existing English Varo narration and all production gates.

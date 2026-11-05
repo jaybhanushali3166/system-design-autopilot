@@ -56,3 +56,19 @@ class StorageGuaranteeLanguageTests(unittest.TestCase):
   c=json.loads((ROOT/'automation/lessons/lesson-11.approved.json').read_text())
   c['scenes'][4]['note']='This model guarantees success'
   with self.assertRaises(ValueError):validate(c)
+
+class PublicationRegressionTests(unittest.TestCase):
+ def test_crash_boundary_language_is_accepted_and_lesson_14_is_valid(self):
+  from automation.content import validate
+  from automation.creative_review import check_mechanism_language
+  c=json.loads((ROOT/'automation/lessons/lesson-14.approved.json').read_text())
+  self.assertEqual(validate(c),c)
+  c['scenes'][1]['narration']='A hardware failure between the two updates leaves the receiver without funds.'
+  c['scenes'][1]['note']='The sender already lost the transfer amount.'
+  self.assertTrue(check_mechanism_language(c))
+ def test_correction_includes_all_action_mismatches(self):
+  from automation.content import correction_feedback
+  c={'scenes':[{'action':a,'narration':'An unrelated illustration.','note':'Unrelated labels.','nodes':[{}, {}, {}]} for a in ['route','queue']]}
+  feedback=correction_feedback(c,ValueError('Candidate rejected'))
+  self.assertIn('Scene 1: explain route',feedback)
+  self.assertIn('Scene 2: explain queue',feedback)

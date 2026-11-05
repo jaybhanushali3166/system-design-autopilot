@@ -1,0 +1,188 @@
+{
+  "caption": "A crash between two independent balance updates can leave a partial transfer. A local database transaction groups those updates atomically. For durable commit, required log records must reach persistent storage before acknowledgement; table pages may follow later. Recovery behavior depends on the engine. External payments need separate coordination because a database rollback cannot undo a completed external call. Test crashes before and after commit, verify balances, and audit external side effects. #systemdesign #beyondlocalhost",
+  "cover_title": "When Transfers Crash Halfway",
+  "scenes": [
+    {
+      "title": "Database Crash During Update",
+      "narration": "This transfer stops halfway through the update when the database suddenly crashes.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "Debit A",
+          "value": "Succeeded",
+          "tone": "green"
+        },
+        {
+          "label": "Crash",
+          "value": "System Down",
+          "tone": "red"
+        },
+        {
+          "label": "Credit B",
+          "value": "Never Ran",
+          "tone": "muted"
+        }
+      ],
+      "note": "The second update never executes.",
+      "action": "block"
+    },
+    {
+      "title": "The Risk of Partial Writes",
+      "narration": "Without a transaction, we send two separate updates. A crash after debiting account A stops execution before account B receives its hundred dollars.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "Account A",
+          "value": "Missing $100",
+          "tone": "red"
+        },
+        {
+          "label": "Boundary",
+          "value": "Failure Point",
+          "tone": "muted"
+        },
+        {
+          "label": "Account B",
+          "value": "Unchanged",
+          "tone": "red"
+        }
+      ],
+      "note": "A partial write is a data corruption risk.",
+      "action": "block"
+    },
+    {
+      "title": "Atomic Grouping",
+      "narration": "Instead, send both updates through one local transaction. The database commits them together, or rolls back the unfinished transfer so neither change remains.",
+      "kind": "workflow",
+      "nodes": [
+        {
+          "label": "Transfer",
+          "value": "A to B",
+          "tone": "cyan"
+        },
+        {
+          "label": "Transaction",
+          "value": "Both changes",
+          "tone": "green"
+        },
+        {
+          "label": "Commit",
+          "value": "All or nothing",
+          "tone": "green"
+        }
+      ],
+      "note": "Simplified path: transfer through a transaction to atomic updates.",
+      "action": "route"
+    },
+    {
+      "title": "Durable Log Writing",
+      "narration": "Before acknowledging a durable commit, the database sends the required log records to persistent storage. Modified table pages can be written later.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "Transaction",
+          "value": "Transfer A to B",
+          "tone": "cyan"
+        },
+        {
+          "label": "Persistent WAL",
+          "value": "Required log records",
+          "tone": "green"
+        },
+        {
+          "label": "Commit ACK",
+          "value": "Durability boundary",
+          "tone": "green"
+        }
+      ],
+      "note": "Required log records persist before durable commit acknowledgement.",
+      "action": "route"
+    },
+    {
+      "title": "Recovery and Rollback",
+      "narration": "After restarting, recovery sends committed changes from the log back to data pages and undoes unfinished work where needed. Procedures vary by engine.",
+      "kind": "workflow",
+      "nodes": [
+        {
+          "label": "Log Scan",
+          "value": "Processing Records",
+          "tone": "cyan"
+        },
+        {
+          "label": "Partial TX",
+          "value": "Discarding",
+          "tone": "red"
+        },
+        {
+          "label": "State",
+          "value": "Clean Balance",
+          "tone": "green"
+        }
+      ],
+      "note": "Recovery follows the stored log; details vary by engine.",
+      "action": "route"
+    },
+    {
+      "title": "The External Boundary",
+      "narration": "That local transaction cannot stop or undo an external payment already sent. If it rolls back, the external side effect needs separate coordination.",
+      "kind": "flow",
+      "nodes": [
+        {
+          "label": "Local DB",
+          "value": "Rolled Back",
+          "tone": "green"
+        },
+        {
+          "label": "API Edge",
+          "value": "Money Sent",
+          "tone": "red"
+        },
+        {
+          "label": "State",
+          "value": "Desynchronized",
+          "tone": "red"
+        }
+      ],
+      "note": "Atomic ACID stops at the network edge.",
+      "action": "block"
+    },
+    {
+      "title": "Crash Resilience Checklist",
+      "narration": "Test a crash during our transfer and verify both balances after recovery. Then check external side effects separately before trusting the whole workflow.",
+      "kind": "workflow",
+      "nodes": [
+        {
+          "label": "Crash Test",
+          "value": "Power Off",
+          "tone": "cyan"
+        },
+        {
+          "label": "WAL Replay",
+          "value": "Verified",
+          "tone": "green"
+        },
+        {
+          "label": "API Audit",
+          "value": "Consistent",
+          "tone": "green"
+        }
+      ],
+      "note": "Reliability through aggressive testing.",
+      "action": "checklist"
+    }
+  ],
+  "story": {
+    "version": 3,
+    "format": "debug",
+    "example": "Transfer A to B",
+    "opening": {
+      "subject": "TXN",
+      "outcome": "Transfer interrupted by system crash",
+      "result_at": 2.4
+    },
+    "takeaway": [
+      "Test crashes and verify both balances",
+      "Check external side effects after rollback"
+    ]
+  }
+}

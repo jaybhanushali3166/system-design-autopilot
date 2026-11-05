@@ -35,7 +35,8 @@
   "reviewed_script_fallbacks": {
     "lesson-10": "2b0c27f0ff4b3dc670ce595e4dde959d1e8600fca27b81409bd06c6c6187ebaf",
     "lesson-11": "3121d23d27a7050e84e6f876cba3e29671002b6c6bb21baa65bfaba1db416e5c",
-    "lesson-12": "0aa66425b6eac82c72bdb4db195c9b84664436859e4d712e3398c8e80d1382bc"
+    "lesson-12": "0aa66425b6eac82c72bdb4db195c9b84664436859e4d712e3398c8e80d1382bc",
+    "lesson-14": "838308775b15ebd3fc70e4fdc800d7c9331106d60a1c77c79f7a3c231cdb985c"
   },
   "voice_model": "gemini-3.8-flash-tts"
 }
