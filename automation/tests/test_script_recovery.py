@@ -168,3 +168,23 @@ class ScriptRecoveryTests(unittest.TestCase):
         self.checkpoint.write_text(json.dumps(saved));post.reset_mock()
         with self.assertRaises(GeminiRequestError):self.generate(generation_claim='b')
         post.assert_not_called()
+
+    @patch('automation.content.post')
+    def test_generation_settings_change_invalidates_draft_but_preserves_cooldown(self, post):
+        from automation.content import digest
+        with patch('automation.content.digest', wraps=digest) as identify:
+            post.side_effect = [response(self.bad()), GeminiRequestError(429, 'daily', 2000)]
+            with self.assertRaises(GeminiRequestError):self.generate()
+        identity = identify.call_args.args[0]
+        self.assertEqual(identity['generation_config'], post.call_args.kwargs['payload']['generationConfig'])
+        # Simulate a restored checkpoint produced with a different sampling profile.
+        old_identity = {**identity, 'generation_config': {**identity['generation_config'], 'temperature': 0.7}}
+        saved = json.loads(self.checkpoint.read_text())
+        saved['request_hash'] = digest(old_identity)
+        self.checkpoint.write_text(json.dumps(saved));post.reset_mock()
+        with self.assertRaises(GeminiRequestError):self.generate()
+        post.assert_not_called()
+        self.clock.return_value = 2001;post.side_effect = [response(story_content())]
+        self.generate()
+        self.assertEqual(post.call_count, 1)
+        self.assertNotIn('Previous candidate (data)', post.call_args.kwargs['payload']['contents'][0]['parts'][0]['text'])

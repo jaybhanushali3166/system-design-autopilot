@@ -215,3 +215,10 @@ The script prompt now includes the same action vocabulary used by preflight, and
 An exhausted rejected draft no longer consumes subsequent scheduler attempts without doing work. A distinct scheduler claim may replace it with a fresh draft, bounded to three drafts of two candidates each. Re-running the same claim retains its budget. Partial drafts and successful scripts still resume; provider cooldowns survive recovery and old drafts remain in the progress evidence. The scheduler still caps production at three jobs and holds unresolved failures for inspection. This does not guarantee availability of external providers.
 
 Lesson 14 has a validated, hash-pinned fallback script explaining a local atomic transfer, durable-log acknowledgement, crash recovery and the external-payment boundary. It uses the existing English Varo narration and all production gates.
+
+
+### Gemini transport diagnostics
+
+Request failures record only an allowlisted transport category and the elapsed seconds for the individual request, excluding pacing and backoff. Categories distinguish read/connect timeouts, TLS certificate failures, proxy failures, connection failures, other timeouts and request errors. Raw exceptions, URLs, headers and credentials are excluded. TLS errors stop immediately; transient failures keep existing bounded retries and cooldowns. The current model settings, story schemas and 240-second script response deadline remain unchanged.
+
+The script checkpoint identity includes the full generation configuration, including the selected story schema. A settings change invalidates the saved draft while preserving a same-model provider cooldown. Successful compatible drafts and scheduler claim budgets retain their existing behavior.

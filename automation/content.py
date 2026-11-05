@@ -225,7 +225,7 @@ Policy and bounded descriptive Insights: '''+json.dumps({'policy':policy(),'insi
  if model in ['gemini-3-flash-preview','gemini-3-flash']:
   generation_config.update(temperature=1.0,thinkingConfig={'thinkingLevel':'minimal'},maxOutputTokens=8192)
  checkpoint=Path(checkpoint) if checkpoint else Path(diagnostics).with_name('script-progress.json') if diagnostics else None
- saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'schema':selected_schema,'rules':hashlib.sha256((ROOT/'automation/story_contract.py').read_bytes()+(ROOT/'automation/creative_review.py').read_bytes()).hexdigest()}),model,resume)
+ saved=script_progress(checkpoint,digest({'model':model,'prompt':prompt,'generation_config':generation_config,'rules':hashlib.sha256((ROOT/'automation/story_contract.py').read_bytes()+(ROOT/'automation/creative_review.py').read_bytes()).hexdigest()}),model,resume)
  attempts=saved['attempts']
  if attempts and attempts[-1]['valid']:
   result=validate(attempts[-1]['candidate']);validate_story(result)
