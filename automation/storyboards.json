@@ -111,6 +111,101 @@
       ],
       "ending": "One locality check and one correctness boundary",
       "beat_count": 7
+    },
+    "lesson-18": {
+      "format": "debug",
+      "opening_action": "route",
+      "hook": "Every profile request skips memory and fetches the same row from disk again.",
+      "example": "User #42 profile",
+      "recipient": "A developer scaling read-heavy endpoints",
+      "visual": "Follow User #42 profile through repeated database reads, an initial cache miss, populating bounded cache memory, a subsequent cache hit, and a cache-down fallback path without assuming infinite capacity.",
+      "beats": [
+        "Show repeated requests bypassing memory to hit the database",
+        "Check cache first and trace a cache miss",
+        "Populate the cache entry with bounded TTL",
+        "Serve the next identical request as a cache hit",
+        "Show bounded capacity limiting what stays cached",
+        "Trace the fallback path when cache is unavailable",
+        "End with miss-path and cache-down checks"
+      ],
+      "ending": "One miss-path check and one cache-down fallback check",
+      "beat_count": 7
+    },
+    "lesson-19": {
+      "format": "debug",
+      "opening_action": "lookup",
+      "hook": "A user saves their new profile, yet the next lookup still returns stale cached data.",
+      "example": "Profile bio update",
+      "recipient": "A teammate debugging stale reads after writes",
+      "visual": "Trace Profile bio update through a stale read race, then compare invalidate-on-write, write-through, and write-back durability trade-offs.",
+      "beats": [
+        "Show the lookup returning stale cached data after an update",
+        "Trace the concurrent read-miss and write race",
+        "Compare invalidate-on-write on the update path",
+        "Trace write-through updating cache and database together",
+        "Show write-back buffering writes and its crash risk",
+        "Clarify that TTL bounds staleness without curing races",
+        "End with invalidation and durability checks"
+      ],
+      "ending": "One stale-race check and one write-durability check",
+      "beat_count": 8
+    },
+    "lesson-20": {
+      "format": "tradeoff",
+      "opening_action": "lookup",
+      "hook": "Memory is full, so the next lookup must evict an older key to make room.",
+      "example": "Bounded 3-slot cache",
+      "recipient": "An engineer tuning a memory-bounded cache",
+      "visual": "Replay one access sequence in Bounded 3-slot cache while separating time-based TTL expiry from capacity eviction across FIFO, LRU, and LFU.",
+      "beats": [
+        "Show a full cache forcing eviction on lookup",
+        "Separate TTL expiry from capacity eviction",
+        "Evict the oldest entry under FIFO",
+        "Compare recency retention under LRU",
+        "Compare frequency retention under LFU",
+        "Match policy trade-offs to workload access patterns",
+        "End with expiry and workload-pattern checks"
+      ],
+      "ending": "One expiry check and one access-pattern check",
+      "beat_count": 7
+    },
+    "lesson-21": {
+      "format": "prediction",
+      "opening_action": "queue",
+      "hook": "One database shard builds a growing query queue while three neighbor shards sit mostly idle.",
+      "example": "Tenant T42 events",
+      "recipient": "An engineer choosing a partition key",
+      "visual": "Show Tenant T42 events queueing on one hot range shard while neighbors stay quiet, then contrast range versus hash placement, dominant-query routing, and cross-shard fan-out costs.",
+      "beats": [
+        "Show one shard queueing while neighbors sit idle",
+        "Trace how range placement creates a hotspot",
+        "Choose a shard key for the dominant query",
+        "Scatter writes evenly with hash placement",
+        "Expose cross-shard fan-out and secondary-index costs",
+        "Note repartitioning trade-offs as data grows",
+        "End with dominant-query and hotspot checks"
+      ],
+      "ending": "One dominant-query check and one hotspot check",
+      "beat_count": 8
+    },
+    "lesson-22": {
+      "format": "prediction",
+      "opening_action": "route",
+      "hook": "Adding one cache server forces modulo routing to remap almost every key to another node.",
+      "example": "Key user:901",
+      "recipient": "A developer scaling a distributed cache",
+      "visual": "Route Key user:901 before and after adding a node under modulo hashing, then move to a hash ring with virtual nodes while noting that a hot key stays hot.",
+      "beats": [
+        "Show modulo routing moving keys when capacity changes",
+        "Predict the cold-cache miss wave during scaling",
+        "Place nodes and keys on a hash ring",
+        "Route clockwise so only neighboring ranges move",
+        "Add virtual nodes to smooth partition balance",
+        "Show why ring placement does not cool one hot key",
+        "End with skew and hot-key boundary checks"
+      ],
+      "ending": "One partition-skew check and one hot-key check",
+      "beat_count": 7
     }
   }
 }

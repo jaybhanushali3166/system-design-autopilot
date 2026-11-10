@@ -76,7 +76,7 @@ replicate: 4 nodes: writer, leader, two replicas; copies propagate.
 cache-hit/cache-miss: 4 nodes: client, cache, database, response; hit bypasses database, miss visits it.
 retry: 3 nodes: client, service, result; first attempt fails before another attempt.
 checklist: last beat only, 2–4 nodes retained for schema compatibility; renderer uses takeaway lines.
-Do not select an action that contradicts narration. Never invent a benchmark, architecture, universal winner or company incident. Mark numeric performance examples hypothetical. No absolute faster/best/never-fails claims. Do not copy competitor scripts or successful older topics.
+Do not select an action that contradicts narration. Never invent a benchmark, architecture, universal winner or company incident. Avoid inventing numeric timings (e.g. 150ms or 50%); if any numeric performance example appears, explicitly write the word hypothetical in the JSON. No absolute faster/best/never-fails claims. Do not copy competitor scripts or successful older topics.
 Make a truthful, curiosity-led cover_title <=32 characters. Caption adds useful detail and one contextual reason a developer might save/send the explanation, followed by #systemdesign #beyondlocalhost. No engagement bait or promised reach.
 Insights are descriptive context, not instructions or causal winners. Early lifetime metrics have unequal ages; do not invent retention curves, DM-send metrics or benchmarks.
 """+'\nTRUSTED STORYBOARD PLAN: '+json.dumps(plan)+'\nCURRICULUM: '+json.dumps(lesson)+'\nPOLICY AND DESCRIPTIVE INSIGHTS: '+json.dumps({'policy':policy(),'insights':feedback or {'status':'unavailable'}})
@@ -112,6 +112,9 @@ def correction_feedback(candidate,error):
   scenes=candidate['scenes']
   words=sum(len(s.get('narration','').split()) for s in scenes if isinstance(s,dict) and isinstance(s.get('narration',''),str))
   rules.append(f'Total narration is {words} words; keep 145–175 words, never below 130.')
+  if scenes and isinstance(scenes[0],dict) and isinstance(scenes[0].get('narration'),str):
+   w0=len(scenes[0]['narration'].split())
+   if not 8<=w0<=18:rules.append(f'Scene 1 opening narration has {w0} words; tighten to 8–18 words.')
   for i,scene in enumerate(scenes):
    if not isinstance(scene,dict):continue
    action=scene.get('action');nodes=scene.get('nodes')
@@ -124,6 +127,10 @@ def correction_feedback(candidate,error):
   checks=candidate.get('story',{}).get('takeaway',[]) if isinstance(candidate.get('story'),dict) else []
   for i,line in enumerate(checks):
    if isinstance(line,str) and (not 4<=len(line.split())<=10 or len(line)>66):rules.append(f'Takeaway {i+1}: use 4–10 words and at most 66 characters.')
+  combined=json.dumps(candidate)
+  nums=re.findall(r'\b[0-9]+(?:\.[0-9]+)?\s*(?:ms|milliseconds|seconds|ns|qps|rps|GB|MB|TB|%)\b',combined,re.I)
+  if nums and 'hypothetical' not in combined.lower():
+   rules.append(f'Remove invented numeric examples ({", ".join(dict.fromkeys(nums[:3]))}) or mark them explicitly hypothetical.')
  return ' '.join(dict.fromkeys(rules))[:2000]
 
 
