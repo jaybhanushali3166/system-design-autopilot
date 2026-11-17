@@ -127,6 +127,8 @@ def correction_feedback(candidate,error):
   checks=candidate.get('story',{}).get('takeaway',[]) if isinstance(candidate.get('story'),dict) else []
   for i,line in enumerate(checks):
    if isinstance(line,str) and (not 4<=len(line.split())<=10 or len(line)>66):rules.append(f'Takeaway {i+1}: use 4–10 words and at most 66 characters.')
+   if isinstance(line,str) and not re.match(r'^(Check|Compare|Inspect|Trace|Measure|Test|Record|Verify|Watch|Limit|Set|Find|Confirm|Separate|Count|Review|Choose|Log|Keep|Ask)\b',line):
+    rules.append(f'Takeaway {i+1} must start with an approved action verb (Check, Compare, Inspect, Trace, Measure, Test, Record, Verify, Watch, Limit, Set, Find, Confirm, Separate, Count, Review, Choose, Log, Keep, Ask).')
   combined=json.dumps(candidate)
   nums=re.findall(r'\b[0-9]+(?:\.[0-9]+)?\s*(?:ms|milliseconds|seconds|ns|qps|rps|GB|MB|TB|%)\b',combined,re.I)
   if nums and 'hypothetical' not in combined.lower():

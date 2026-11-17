@@ -10,8 +10,11 @@ def storyboard_plan(lesson):
  plans=json.loads((ROOT/'automation/storyboards.json').read_text())
  if lesson['id'] in plans['lessons']:return plans['lessons'][lesson['id']]
  style=FORMATS[(number-12)%len(FORMATS)]
+ opener=OPENERS[style][(number-12)%len(OPENERS[style])]
  return {'format':style,
+         'opening_action':opener,
          'opening_brief':lesson.get('hook','Show one concrete consequence immediately'),
          'visual':'Choose a supported opening action that actually depicts this topic, not an unrelated failure. One evolving input; show a failure, prediction or trade-off appropriate to this topic. Avoid the repeated two-lane race.',
          'recipient':'A developer facing the problem in this curriculum packet',
-         'ending':'One or two practical checks someone can apply later'}
+         'ending':'One or two practical checks someone can apply later',
+         'beat_count':7}

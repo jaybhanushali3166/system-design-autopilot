@@ -206,6 +206,139 @@
       ],
       "ending": "One partition-skew check and one hot-key check",
       "beat_count": 7
+    },
+    "lesson-23": {
+      "format": "debug",
+      "opening_action": "route",
+      "hook": "A user saves profile data, but their immediate read route returns stale replica state.",
+      "example": "User #42 profile save",
+      "recipient": "A developer debugging stale reads after saving",
+      "visual": "Route User #42 profile save to the leader while asynchronous replica lag temporarily leaves follower replicas behind. Trace primary read-routing for read-your-writes, and show failover risks when an unpromoted replica misses unreplicated commits.",
+      "beats": [
+        "Show immediate read routing reaching a lagging replica",
+        "Commit the write to the leader and record replication lag",
+        "Propagate changes asynchronously across replica nodes",
+        "Route recent writers to the primary for read-your-writes",
+        "Simulate leader failover and unreplicated write loss",
+        "Clarify that replicas add read scale rather than write capacity",
+        "End with lag-metric and read-routing checks"
+      ],
+      "ending": "One replication-lag check and one read-routing check",
+      "beat_count": 7
+    },
+    "lesson-24": {
+      "format": "tradeoff",
+      "opening_action": "lookup",
+      "hook": "A client lookup returns yesterday's inventory version right after another customer completes checkout.",
+      "example": "SKU-99 inventory lookup",
+      "recipient": "An engineer designing data consistency contracts",
+      "visual": "Compare SKU-99 inventory lookup across linearizable global ordering, eventual consistency convergence, and monotonic read session guarantees on a distributed timeline.",
+      "beats": [
+        "Show an inventory lookup finding a stale version",
+        "Trace linearizability requiring instant global visibility",
+        "Show eventual consistency converging without fixed time bounds",
+        "Enforce read-your-writes so clients observe their updates",
+        "Guarantee monotonic reads to prevent backwards time travel",
+        "Compare coordination cost against stale read tolerance",
+        "End with guarantee-level and freshness checks"
+      ],
+      "ending": "One consistency-model check and one freshness bound check",
+      "beat_count": 7
+    },
+    "lesson-25": {
+      "format": "tradeoff",
+      "opening_action": "block",
+      "hook": "A network boundary blocks replica sync, forcing the isolated node to choose between rejection and stale data.",
+      "example": "Region split payment",
+      "recipient": "A developer architecting partitioned services",
+      "visual": "A network partition blocks Region split payment between replicas. Contrast refusing writes to preserve linearizable consistency versus accepting local writes to remain available, then extend to PACELC latency trade-offs on the normal path.",
+      "beats": [
+        "Show a partition boundary blocking replica sync",
+        "Reject operations to preserve linearizable consistency",
+        "Accept writes locally to maintain availability",
+        "Reconcile divergent partitions after connectivity restores",
+        "Expose normal-path PACELC latency versus consistency trade-offs",
+        "Clarify formal availability versus informal uptime",
+        "End with partition-mode and normal-path checks"
+      ],
+      "ending": "One partition-behavior check and one normal-latency check",
+      "beat_count": 7
+    },
+    "lesson-26": {
+      "format": "prediction",
+      "opening_action": "queue",
+      "hook": "Five replica workers wait in queue to vote on committing one durable config change.",
+      "example": "Config #501 commit",
+      "recipient": "An engineer implementing distributed quorum storage",
+      "visual": "Five replica workers wait to commit Config #501. Show quorum intersection across read and write majorities, then advance to leader-driven consensus for linearizable log ordering.",
+      "beats": [
+        "Show replica nodes queueing votes for a proposal",
+        "Predict overlap where read and write quorums intersect",
+        "Commit the entry once a strict majority confirms",
+        "Trace leader election when the coordinator disconnects",
+        "Distinguish simple majority voting from consensus protocols",
+        "Show how version tracking prevents split-brain decisions",
+        "End with quorum-overlap and membership checks"
+      ],
+      "ending": "One quorum-math check and one consensus-leader check",
+      "beat_count": 7
+    },
+    "lesson-27": {
+      "format": "debug",
+      "opening_action": "block",
+      "hook": "A storage boundary must block writes from a paused worker that woke up after its lease expired.",
+      "example": "Batch job worker lease",
+      "recipient": "A developer coordinating distributed cron or workers",
+      "visual": "A paused worker wakes up after lease expiry and tries to write Batch job data. Show a replacement worker already holding the lease, and use an incrementing fencing token to block stale updates.",
+      "beats": [
+        "Show storage blocking a zombie worker's delayed write",
+        "Trace lease expiration during a long pause or GC",
+        "Elect a replacement worker with an incremented fencing token",
+        "Reject the zombie write using token version checks",
+        "Demonstrate why locks without fencing cannot stop side effects",
+        "Keep lease renewal intervals strictly shorter than timeouts",
+        "End with lease-duration and fencing-token checks"
+      ],
+      "ending": "One fencing-token check and one lease-renewal check",
+      "beat_count": 7
+    },
+    "lesson-28": {
+      "format": "debug",
+      "opening_action": "scan",
+      "hook": "Two booking threads scan the same seat row simultaneously and both confirm it looks available.",
+      "example": "Seat #12A reservation",
+      "recipient": "A developer handling concurrent database updates",
+      "visual": "Two clients scan Seat #12A at the same time and create a lost update race. Compare read committed, repeatable read, optimistic conditional updates, and serializable locks.",
+      "beats": [
+        "Show two concurrent threads scanning the same inventory row",
+        "Trace the race where both see available stock and overwrite",
+        "Prevent the conflict using atomic conditional compare-and-set",
+        "Compare pessimistic row locks against optimistic version checks",
+        "Expose phantom reads under weaker isolation levels",
+        "Balance serializable correctness against transaction retry costs",
+        "End with isolation-level and conditional-write checks"
+      ],
+      "ending": "One isolation-anomaly check and one conditional-update check",
+      "beat_count": 7
+    },
+    "lesson-29": {
+      "format": "tradeoff",
+      "opening_action": "route",
+      "hook": "An order route charges the credit card successfully, but fails to reach the inventory service.",
+      "example": "Order #902 checkout",
+      "recipient": "A developer coordinating cross-service workflows",
+      "visual": "Trace Order #902 checkout routing across payment, inventory, and shipment. Compare two-phase commit blocking risks against choreography/orchestration saga compensations.",
+      "beats": [
+        "Show an order route succeeding at payment but failing downstream",
+        "Expose two-phase commit coordinator lockup during failures",
+        "Break the workflow into local ACID database transactions",
+        "Trigger compensating actions when a subsequent step aborts",
+        "Clarify that compensation is business repair, not ACID rollback",
+        "Track saga progress with an explicit orchestrator state machine",
+        "End with compensating-action and idempotency checks"
+      ],
+      "ending": "One compensation-repair check and one saga-state check",
+      "beat_count": 7
     }
   }
 }

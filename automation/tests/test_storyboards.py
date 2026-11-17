@@ -59,14 +59,18 @@ class StoryboardTests(unittest.TestCase):
   c['story']['format']='prediction';response['candidates'][0]['content']['parts'][0]['text']=json.dumps(c)
   with patch.dict('os.environ',{'GEMINI_API_KEY':'test-only'}),patch('automation.content.post',return_value=response):
    with self.assertRaisesRegex(ValueError,'selected storyboard'):generate({'id':'lesson-12'})
- def test_series_four_storyboards_satisfy_opening_and_action_rules(self):
+ def test_series_four_and_five_storyboards_satisfy_opening_and_action_rules(self):
   from automation.creative_review import MECHANISM_WORDS
-  for i in range(18,23):
+  for i in range(18,30):
    plan=storyboard_plan({'id':f'lesson-{i}'})
    self.assertIn(plan['opening_action'],['scan','block','queue','route','lookup'])
    self.assertTrue(8<=len(plan['hook'].split())<=18)
    self.assertLessEqual(len(plan['example']),24)
    self.assertTrue(any(w in plan['hook'].lower() for w in MECHANISM_WORDS[plan['opening_action']]))
+ def test_storyboard_fallback_provides_valid_opener_and_beat_count(self):
+  plan=storyboard_plan({'id':'lesson-30'})
+  self.assertIn(plan['opening_action'],['scan','block','queue','route','lookup'])
+  self.assertEqual(plan['beat_count'],7)
  def test_correction_feedback_reports_numeric_tokens_and_opening_word_count(self):
   from automation.content import correction_feedback
   c=candidate()
@@ -74,6 +78,9 @@ class StoryboardTests(unittest.TestCase):
   feedback=correction_feedback(c,ValueError('Opening narration must reach the consequence in 8–18 words'))
   self.assertIn('tighten to 8–18 words',feedback)
   self.assertIn('250ms',feedback)
+  c['story']['takeaway']=['Route reads to primary']
+  feedback=correction_feedback(c,ValueError('Takeaway must state a concrete action'))
+  self.assertIn('approved action verb',feedback)
 
 class MechanismPixelTests(unittest.TestCase):
  def frame(self,x,y):
